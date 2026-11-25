@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 6: sortering, lengde på låter -->
+<!-- versjon 8: gjør om WMA til MP3 -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -226,7 +226,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 
 <div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="drop" id="drop" hidden>Slipp låtene her</div>
-<div class="selbar" id="selbar" hidden><b id="selc">0 valgt</b><button class="btn ghost" data-sel="all">Velg alle</button><button class="btn ghost" data-sel="cancel">Avbryt</button><button class="btn ghost" data-sel="rm" id="selrm">Fjern fra lista</button><button class="btn ghost" data-sel="add">Legg i album / spilleliste</button><button class="btn" data-sel="new">+ Nytt album / spilleliste</button></div>
+<div class="selbar" id="selbar" hidden><b id="selc">0 valgt</b><button class="btn ghost" data-sel="all">Velg alle</button><button class="btn ghost" data-sel="cancel">Avbryt</button><button class="btn ghost" data-sel="rm" id="selrm">Fjern fra lista</button><button class="btn ghost danger" data-sel="del">Slett</button><button class="btn ghost" data-sel="add">Legg i album / spilleliste</button><button class="btn" data-sel="new">+ Nytt album / spilleliste</button></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -367,20 +367,76 @@ const dur=f=>new Promise(r=>{const a=new Audio(),u=URL.createObjectURL(f);let do
 const MIME={mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',wav:'audio/wav',flac:'audio/flac',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/ogg',webm:'audio/webm'};
 
 /* ---------- opplasting ---------- */
+const BAD=/\.(wma|asf|aiff?|ape|wv|ra|ram|amr|mid|midi|ac3|dts|mka)$/i;
+const CONV=/\.(wma|asf|aiff?|ape|wv|ra|ram|amr|ac3|dts|mka)$/i;
+/* ---------- gjør om WMA o.l. til MP3 i nettleseren (FFmpeg) ---------- */
+const loadScript=src=>new Promise((res,rej)=>{if([...document.scripts].some(s=>s.src===src))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('Fikk ikke lastet '+src));document.head.appendChild(s)});
+let ffP=null;
+function loadFF(){
+  if(ffP)return ffP;
+  ffP=(async()=>{
+    const FV='0.12.10',UV='0.12.1',CV='0.12.6';
+    await loadScript(`https://unpkg.com/@ffmpeg/ffmpeg@${FV}/dist/umd/ffmpeg.js`);
+    await loadScript(`https://unpkg.com/@ffmpeg/util@${UV}/dist/umd/index.js`);
+    const {FFmpeg}=window.FFmpegWASM,{toBlobURL}=window.FFmpegUtil;
+    const ff=new FFmpeg(),base=`https://unpkg.com/@ffmpeg/core@${CV}/dist/umd`;
+    await ff.load({
+      coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
+      wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm'),
+      classWorkerURL:await toBlobURL(`https://unpkg.com/@ffmpeg/ffmpeg@${FV}/dist/umd/814.ffmpeg.js`,'text/javascript')
+    });
+    return ff;
+  })().catch(e=>{ffP=null;throw e});
+  return ffP;
+}
+let ffN=0;
+async function toMp3(file){
+  const ff=await loadFF();const n=++ffN,ext=(file.name.match(/\.([a-z0-9]+)$/i)||[,'wma'])[1].toLowerCase();
+  const inN=`in${n}.${ext}`,outN=`out${n}.mp3`;
+  await ff.writeFile(inN,new Uint8Array(await file.arrayBuffer()));
+  await ff.exec(['-i',inN,'-vn','-ar','44100','-ac','2','-b:a','192k','-id3v2_version','3',outN]);
+  let data;try{data=await ff.readFile(outN)}finally{ff.deleteFile(inN).catch(()=>{});ff.deleteFile(outN).catch(()=>{})}
+  if(!data||!data.length)throw new Error('Tom fil');
+  return new File([data],file.name.replace(/\.[^.]+$/,'')+'.mp3',{type:'audio/mpeg'});
+}
+async function convertExisting(){
+  const list=S.songs.filter(s=>mine(s)&&CONV.test(s.file_path));if(!list.length)return;
+  let ok=0,fail=0;
+  for(const [i,s] of list.entries()){
+    toast(`Gjør om ${i+1} av ${list.length} til MP3 …${i===0?' (første gang tar det litt tid)':''}`,true);
+    try{
+      const u=await signOne(s.file_path);const blob=await (await fetch(u)).blob();
+      const mp3=await toMp3(new File([blob],'x.'+s.file_path.split('.').pop()));
+      const path=`${me.id}/${s.id}.mp3`;
+      const up=await sb.storage.from(B).upload(path,mp3,{contentType:'audio/mpeg',upsert:false});if(up.error&&!/exist|duplicate/i.test(up.error.message||''))throw up.error;
+      const d=await dur(mp3);
+      const {error}=await sb.from('ml_songs').update({file_path:path,size:mp3.size,duration:d}).eq('id',s.id);if(error)throw error;
+      sb.storage.from(B).remove([s.file_path]);
+      Object.assign(s,{file_path:path,size:mp3.size,duration:d});signed.delete(path);ok++;render();
+    }catch(e){console.error(e);fail++}
+  }
+  await signMany(S.songs.map(s=>s.file_path));
+  toast(fail?`${ok} gjort om, ${fail} feilet`:`${ok} ${ok===1?'låt':'låter'} gjort om til MP3 – klare til å spilles`);render();
+}
 const AUD=/\.(mp3|m4a|aac|wav|flac|ogg|oga|opus|webm)$/i;
 const UQ=[];let upRun=false,upTotal=0,upDone=0;
 function addFiles(list,target=null){
   if(!me)return;
-  const files=[...list].filter(f=>f.type.startsWith('audio/')||AUD.test(f.name));
-  if(!files.length){toast('Fant ingen lydfiler – prøv MP3, M4A, WAV eller FLAC');return}
-  UQ.push(...files.map(f=>({f,pl:target})));upTotal+=files.length;
+  const all=[...list].filter(f=>f.type.startsWith('audio/')||AUD.test(f.name)||BAD.test(f.name));
+  const bad=all.filter(f=>!CONV.test(f.name)&&(BAD.test(f.name)||(!AUD.test(f.name)&&!document.createElement('audio').canPlayType(f.type))));
+  const files=all.filter(f=>!bad.includes(f));
+  if(bad.length){const ex=[...new Set(bad.map(f=>(f.name.match(/\.([a-z0-9]+)$/i)||[,'ukjent'])[1].toUpperCase()))].join(', ');
+    modal(`<h2>${bad.length} ${bad.length===1?'fil':'filer'} kan ikke brukes</h2><p>Filtypen <b>${esc(ex)}</b> kan ikke spilles i nettlesere, så ${bad.length===1?'den':'de'} ble ikke lastet opp.</p><p style="color:var(--mut)">Gjør ${bad.length===1?'den':'dem'} om til MP3 først, og last opp på nytt.</p><button class="btn" data-m="close" style="width:100%;margin-top:8px">OK</button>`)}
+  if(!files.length){if(!bad.length)toast('Fant ingen lydfiler – prøv MP3, M4A, WAV eller FLAC');return}
+  UQ.push(...files.map(f=>({f,pl:target,conv:CONV.test(f.name)})));upTotal+=files.length;
   if(upRun)toast(`${files.length} ${files.length===1?'låt':'låter'} lagt i køen · ${upDone} av ${upTotal} ferdig`);
   else runUploads();
 }
 async function runUploads(){
   upRun=true;const st={n:0,big:0,fail:0};let share=false;const added=[];
   while(UQ.length){
-    const {f,pl:tgt}=UQ.shift();upDone++;share=admin&&shareNew;
+    let {f,pl:tgt,conv}=UQ.shift();upDone++;share=admin&&shareNew;
+    if(conv){toast(`Gjør om ${upDone} av ${upTotal} til MP3 …${!st.cv?' (første gang tar det litt tid)':''}`,true);try{f=await toMp3(f);st.cv=(st.cv||0)+1}catch(e){console.error(e);st.cf=(st.cf||0)+1;continue}}
     if(f.size>50*1048576){st.big++;continue}
     toast(`Laster opp ${upDone} av ${upTotal} …`,true);
     try{
@@ -402,7 +458,7 @@ async function runUploads(){
   }
   upRun=false;upTotal=0;upDone=0;
   signMany(added);
-  const parts=[];if(st.n)parts.push(`${st.n} ${st.n===1?'låt':'låter'} lagt til${st.pl?` i «${st.pl}»`:''}${share?' og delt med alle':''}`);if(st.big)parts.push(`${st.big} var over 50 MB`);if(st.fail)parts.push(`${st.fail} feilet`);
+  const parts=[];if(st.n)parts.push(`${st.n} ${st.n===1?'låt':'låter'} lagt til${st.pl?` i «${st.pl}»`:''}${share?' og delt med alle':''}`);if(st.big)parts.push(`${st.big} var over 50 MB`);if(st.cv)parts.push(`${st.cv} gjort om fra WMA til MP3`);if(st.cf)parts.push(`${st.cf} kunne ikke gjøres om`);if(st.fail)parts.push(`${st.fail} feilet`);
   toast(parts.join(' · ')||'Ingen låter lagt til');
 }
 let upTarget=null;
@@ -461,6 +517,7 @@ function render(){
   v.innerHTML=`${pl?'<button class="back" data-act="back">← Alle spillelister</button>':''}
   <section class="hero" style="--h:${meta[2]}">${art}<div><p class="kind">${meta[0]}</p><h1>${esc(meta[1])}</h1><p>${L.length} ${L.length===1?'låt':'låter'} · ${long(tot)}${S.q?` · søk: «${esc(S.q)}»`:''}</p>
   <div class="hb"><button class="btn" data-act="playall">${I.play} Spill</button><button class="btn ghost" data-act="shuffleall">${I.shuf} Tilfeldig</button>${L.length?'<button class="btn ghost" data-act="select">Velg låter</button>':''}${pl?'<button class="btn ghost" data-act="uphere">Last opp hit</button><button class="btn ghost" data-act="renpl">Gi nytt navn</button><button class="btn ghost" data-act="delpl">Slett liste</button>':''}</div></div></section>
+  ${(()=>{const n=S.songs.filter(s=>mine(s)&&CONV.test(s.file_path)).length;return n?`<div class="msg" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 12px"><span style="flex:1;min-width:200px">${ant(n)} er i WMA-format og kan ikke spilles. Appen kan gjøre dem om til MP3 for deg.</span><button class="btn" data-act="convall">Gjør om til MP3</button></div>`:''})()}
   ${(()=>{if(S.tab!=='mine'||S.q.trim())return '';const P=inPl(),n=library().filter(s=>P.has(s.id)).length;return n?`<button class="chip" data-act="showall">${n} ${n===1?'låt ligger':'låter ligger'} i spillelister · ${S.showAll?'Skjul dem her':'Vis dem her også'}</button>`:''})()}
   ${L.length>1?`<div class="tools"><label class="sort">Sorter <select id="sortsel">${SORTS.map(([v,l])=>`<option value="${v}"${S.sort===v?' selected':''}>${v==='auto'&&pl?'Rekkefølgen i lista':l}</option>`).join('')}</select></label></div>`:''}
   ${L.length?`<ol class="rows">${L.map((s,i)=>{
@@ -480,6 +537,7 @@ $('#view').addEventListener('click',e=>{
   if(S.sel&&row){const id=row.dataset.id;S.sel.has(id)?S.sel.delete(id):S.sel.add(id);render();selbar();return}
   if(a){const act=a.dataset.act;
     if(act==='select'){S.sel=new Set();render();selbar();return}
+    if(act==='convall'){a.disabled=true;convertExisting();return}
     if(act==='uphere'){upTarget=S.pl;return $('#file').click()}
     if(act==='showall'){S.showAll=!S.showAll;render();return}
     if(act==='upload')return $('#file').click();
@@ -557,7 +615,7 @@ function confirmBox(text,yes,cb){modal(`<h2>Er du sikker?</h2><p>${esc(text)}</p
 function newPl(addId){ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:addId?[addId]:[]}).select().single();if(error)return toast('Kunne ikke lage lista');S.pls.push(data);if(!addId){S.sel=null;selbar();S.tab='pl';S.pl=data.id;scrollTo(0,0)}render();toast(addId?'Lagt i «'+name+'»':'«'+name+'» er laget – trykk «Last opp hit» for å legge inn sanger')})}
 function renPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)ask('Gi nytt navn',p.name,name=>{p.name=name;render();savePl(p)})}
 function delPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)confirmBox(`Slette spillelista «${p.name}»? Låtene går tilbake til «Mitt bibliotek».`,'Slett liste',async()=>{const {error}=await sb.from('ml_playlists').delete().eq('id',p.id);if(error)return toast('Kunne ikke slette');S.pls=S.pls.filter(x=>x!==p);S.pl=null;render()})}
-async function delSong(id){
+async function delSong(id,quiet){
   const s=song(id);if(!s)return;
   const {error}=await sb.from('ml_songs').delete().eq('id',id);if(error)return toast('Kunne ikke slette låten');
   sb.storage.from(B).remove([s.file_path,s.cover_path].filter(Boolean));
@@ -566,7 +624,7 @@ async function delSong(id){
   for(const p of S.pls)if(p.song_ids.includes(id)){p.song_ids=p.song_ids.filter(x=>x!==id);savePl(p)}
   const i=S.queue.indexOf(id);if(i>-1){S.queue.splice(i,1);S.base=S.base.filter(x=>x!==id);if(i<S.qi)S.qi--}
   if(wasCur){audio.pause();audio.removeAttribute('src');if(S.qi>=S.queue.length)S.qi=S.queue.length-1;if(S.queue.length)load1(false);else{S.qi=-1;now()}}
-  toast('Låten er slettet');render();
+  if(!quiet){toast('Låten er slettet');render()}
 }
 
 /* ---------- velg flere låter ---------- */
@@ -595,6 +653,16 @@ $('#selbar').addEventListener('click',e=>{
       if(m!=='to')return;const p=S.pls.find(x=>x.id===bt.dataset.p);if(!p)return;close();
       p.song_ids=[...p.song_ids,...ids.filter(i=>!p.song_ids.includes(i))];await savePl(p);await fromSource(ids,p.id);endSel();toast(`${ant(ids.length)} lagt i «${p.name}»`);
     }});
+  }
+  else if(k==='del'){
+    const own=ids.filter(i=>{const s=song(i);return s&&(mine(s)||admin)}),other=ids.filter(i=>!own.includes(i));
+    const anyShared=own.some(i=>song(i).shared);
+    confirmBox(`Slette ${ant(own.length)}?${anyShared?' Noen av dem er felles låter og forsvinner for alle.':''}${other.length?` ${ant(other.length)} er felles låter som bare fjernes fra biblioteket ditt.`:''}`,'Slett',async()=>{
+      toast('Sletter …',true);
+      for(const i of own)await delSong(i,true);
+      for(const i of other){const r=await sb.from('ml_hidden').insert({song_id:i});if(!r.error)S.hidden.add(i)}
+      endSel();toast(`${ant(ids.length)} slettet`);
+    });
   }
   else if(k==='rm'){const p=S.pls.find(x=>x.id===S.pl);if(!p)return;p.song_ids=p.song_ids.filter(i=>!ids.includes(i));savePl(p);endSel();toast(`${ant(ids.length)} fjernet fra lista`)}
 });
@@ -654,7 +722,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-pc]');if(!
 audio.addEventListener('play',()=>document.body.classList.add('playing'));
 audio.addEventListener('pause',()=>document.body.classList.remove('playing'));
 audio.addEventListener('ended',()=>{if(S.repeat===2){audio.currentTime=0;audio.play().catch(()=>{})}else next(true)});
-audio.addEventListener('error',()=>{if(audio.getAttribute('src'))toast('Denne låten kan ikke spilles i denne nettleseren')});
+audio.addEventListener('error',()=>{if(audio.getAttribute('src'))toast(CONV.test(song(curId())?.file_path||'')?'Denne låten er WMA – trykk «Gjør om til MP3» øverst i lista':'Denne låten kan ikke spilles i denne nettleseren')});
 let drag=false;
 audio.addEventListener('timeupdate',()=>{const d=audio.duration||0,t=audio.currentTime,p=d?t/d:0;
   if(!drag)$$('.seek').forEach(r=>r.value=Math.round(p*1000));
