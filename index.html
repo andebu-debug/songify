@@ -97,7 +97,24 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 .mini{display:none}
 .np{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;gap:18px;padding:calc(12px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));overflow:auto;background:linear-gradient(180deg,color-mix(in srgb,hsl(var(--h,20) 70% 50%) 45%,var(--bg)),var(--bg) 68%)}
 .np .tophd{width:100%;max-width:460px;display:flex;justify-content:space-between;align-items:center;color:var(--mut);font-size:14px}
-.np .art{width:min(80vw,46vh,440px);height:auto;aspect-ratio:1;border-radius:18px;box-shadow:0 26px 60px rgba(0,0,0,.35);font-size:110px}
+.stage{width:100%;max-width:520px;display:grid;grid-template-columns:minmax(0,1fr) 52px;align-items:center;gap:8px}
+.deck{position:relative;width:min(64vw,44vh,420px);aspect-ratio:1;margin:auto}
+.disc{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,#0c0b0e 0 17%,transparent 17.5%),repeating-radial-gradient(circle,#141317 0 1.6px,#1d1b21 2.2px 3.4px);box-shadow:0 28px 60px rgba(0,0,0,.45),inset 0 0 0 2px #000;animation:spin 1.8s linear infinite;animation-play-state:paused}
+.playing .disc,.playing .bar .cv{animation-play-state:running}
+.disc .lab{position:absolute;inset:31%;border-radius:50%;overflow:hidden}
+.disc .lab .cv{width:100%;height:100%;border-radius:50%;font-size:clamp(28px,7vw,54px)}
+.disc .lab::after{content:"";position:absolute;left:50%;top:50%;width:9%;height:9%;margin:-4.5% 0 0 -4.5%;border-radius:50%;background:#0c0b0e;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:conic-gradient(from 20deg,transparent 0 8%,rgba(255,255,255,.10) 12%,transparent 18% 50%,rgba(255,255,255,.08) 62%,transparent 68%)}
+.arm{position:absolute;right:-6%;top:-6%;width:46%;height:auto;transform-origin:82% 14%;transform:rotate(-24deg);transition:transform .7s ease;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4))}
+.playing .arm{transform:rotate(0deg)}
+.vvol{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mut)}
+.vvol input{writing-mode:vertical-lr;direction:rtl;width:32px;height:min(200px,30vh)}
+.np .prog,.np .btns,.np .info,.np .extra{width:100%;max-width:460px}
+.extra{display:flex;justify-content:center}
+.eqv{display:grid;grid-template-columns:auto minmax(0,1fr) 64px;gap:12px;align-items:center;margin:6px 0}
+.eqv b{font-weight:600}.eqv output{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+.pre{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}.pre button{height:40px;padding:0 14px;border-radius:999px;background:var(--pan2)}.pre button.on{background:var(--acc);color:var(--on)}
+.eqb{font-size:13px;font-weight:700;letter-spacing:.02em}
 .np .info{width:100%;max-width:460px;display:flex;align-items:center;gap:8px}
 .np .info .tt{flex:1}.np .info b{font-size:24px;font-weight:600}.np .info small{font-size:16px}
 .np .prog,.np .btns,.np .vol{width:100%;max-width:460px}
@@ -135,6 +152,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 .msg.err{background:color-mix(in srgb,#e5484d 18%,transparent)}
 .setup{max-width:560px;margin:60px auto;padding:0 20px}
 @media(max-width:700px){
+ .bar .cv{border-radius:50%;animation:spin 1.8s linear infinite;animation-play-state:paused}
  .row{grid-template-columns:48px minmax(0,1fr) 44px 44px;gap:10px;padding:6px 4px}.n,.al,.du{display:none}
  .hero{flex-direction:column;align-items:flex-start}
  .empty{grid-template-columns:1fr}.empty .vinyl{max-width:200px}
@@ -144,7 +162,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
  .top .btn span{display:none}.top .btn{padding:0 14px}
  .search{max-width:none}
 }
-@media(prefers-reduced-motion:reduce){.vinyl{animation:none}.toast{transition:none}}
+@media(prefers-reduced-motion:reduce){.vinyl,.disc,.bar .cv{animation:none}.arm{transition:none}.toast{transition:none}}
 </style></head><body>
 
 <div class="setup" id="setup" hidden><h1>Nesten klar!</h1><p>Appen mangler koblingen til Supabase. Åpne filen <b>config.js</b>, lim inn Project URL og anon key fra Supabase, og send endringen til GitHub (Commit og Push origin).</p></div>
@@ -172,16 +190,20 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
     <div class="btns"><button class="ic side" data-pc="shuf" aria-label="Tilfeldig rekkefølge"></button><button class="ic side" data-pc="prev" aria-label="Forrige"></button><button class="play" data-pc="play" aria-label="Spill / pause"></button><button class="ic" data-pc="next" aria-label="Neste"></button><button class="ic side" data-pc="rep" aria-label="Gjenta"></button></div>
     <div class="prog"><span class="tcur">0:00</span><input class="seek" type="range" min="0" max="1000" value="0" aria-label="Spol"><span class="tdur">0:00</span></div>
   </div>
-  <div class="vol"><span class="ic vi"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Volum"></div>
+  <div class="vol"><button class="ic eqb" data-pc="eq" aria-label="Bass og diskant">EQ</button><span class="ic vi"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Volum"></div>
 </footer>
 
 <section class="np" id="np" hidden>
   <div class="tophd"><button class="ic" data-pc="close" aria-label="Lukk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button><span>Spilles nå</span><span style="width:44px"></span></div>
-  <div id="npart"></div>
+  <div class="stage">
+    <div class="deck"><div class="disc"><div class="lab" id="npart"></div></div><div class="sheen"></div>
+      <svg class="arm" viewBox="0 0 120 160" aria-hidden="true"><circle cx="98" cy="22" r="16" fill="#3a3540"/><circle cx="98" cy="22" r="7" fill="#9a929f"/><path d="M98 22 L84 112 L58 138" stroke="#c9c2cc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="42" y="130" width="24" height="16" rx="3" transform="rotate(38 54 138)" fill="#ff6a3d"/></svg></div>
+    <div class="vvol"><span class="vi" style="width:22px"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Lydnivå"><small>Lyd</small></div>
+  </div>
   <div class="info"><div class="tt"><b id="ntitle"></b><small id="nart"></small></div><button class="ic heart" data-pc="like" aria-label="Lik låten"></button></div>
-  <div class="prog"><span class="tcur">0:00</span><input class="seek" type="range" min="0" max="1000" value="0" aria-label="Spol"><span class="tdur">0:00</span></div>
+  <div class="prog"><span class="tcur">0:00</span><input class="seek" type="range" min="0" max="1000" value="0" aria-label="Spol"><span class="trem">-0:00</span></div>
   <div class="btns"><button class="ic" data-pc="shuf" aria-label="Tilfeldig rekkefølge"></button><button class="ic" data-pc="prev" aria-label="Forrige"></button><button class="play" data-pc="play" aria-label="Spill / pause"></button><button class="ic" data-pc="next" aria-label="Neste"></button><button class="ic" data-pc="rep" aria-label="Gjenta"></button></div>
-  <div class="vol"><span class="ic vi"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Volum"></div>
+  <div class="extra"><button class="btn ghost" data-pc="eq"><span class="eqb">EQ</span> Bass og diskant</button></div>
 </section>
 
 <div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -494,7 +516,7 @@ $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')return close()
 $('#sheet').addEventListener('submit',e=>{e.preventDefault();H.submit&&H.submit(new FormData(e.target))});
 
 /* ---------- spilleren ---------- */
-const audio=new Audio();audio.preload='auto';
+const audio=new Audio();audio.preload='auto';audio.crossOrigin='anonymous';
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function startQueue(ids,i){S.base=[...ids];const first=ids[i];S.queue=S.shuffle?[first,...shuffle(ids.filter((_,k)=>k!==i))]:[...ids];S.qi=S.shuffle?0:i;load1(true)}
 function load1(go){
@@ -510,7 +532,7 @@ function modes(){$$('[data-pc=shuf]').forEach(b=>b.classList.toggle('on',S.shuff
 function reshuffle(){const c=curId();if(!c)return;if(S.shuffle){S.queue=[c,...shuffle(S.queue.filter(x=>x!==c))];S.qi=0}else{S.queue=[...S.base];S.qi=Math.max(0,S.queue.indexOf(c))}}
 function now(){
   const s=me&&song(curId());$('#bar').hidden=!s;if(!s){$('#np').hidden=true;return}
-  $('#bcov').innerHTML=cov(s);$('#npart').innerHTML=cov(s,'cv art');
+  $('#bcov').innerHTML=cov(s);$('#npart').innerHTML=cov(s,'cv');
   $('#btitle').textContent=$('#ntitle').textContent=s.title;
   $('#bart').textContent=$('#nart').textContent=s.artist||'Ukjent artist';
   const liked=S.likes.has(s.id);
@@ -525,6 +547,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-pc]');if(!
   else if(c==='shuf'){S.shuffle=!S.shuffle;reshuffle();modes();toast(S.shuffle?'Tilfeldig rekkefølge på':'Tilfeldig rekkefølge av')}
   else if(c==='rep'){S.repeat=(S.repeat+1)%3;modes();toast(['Gjenta av','Gjentar hele lista','Gjentar denne låten'][S.repeat])}
   else if(c==='like'){if(curId())like(curId())}
+  else if(c==='eq')eqSheet();
   else if(c==='open')$('#np').hidden=false;else if(c==='close')$('#np').hidden=true;
 });
 audio.addEventListener('play',()=>document.body.classList.add('playing'));
@@ -534,11 +557,52 @@ audio.addEventListener('error',()=>{if(audio.getAttribute('src'))toast('Denne l�
 let drag=false;
 audio.addEventListener('timeupdate',()=>{const d=audio.duration||0,t=audio.currentTime,p=d?t/d:0;
   if(!drag)$$('.seek').forEach(r=>r.value=Math.round(p*1000));
-  $$('.tcur').forEach(e=>e.textContent=fmt(t));$$('.tdur').forEach(e=>e.textContent=fmt(d));$('#mini').style.width=(p*100)+'%'});
+  $$('.tcur').forEach(e=>e.textContent=fmt(t));$$('.tdur').forEach(e=>e.textContent=fmt(d));$$('.trem').forEach(e=>e.textContent='-'+fmt(Math.max(0,d-t)));$('#mini').style.width=(p*100)+'%'});
 $$('.seek').forEach(r=>{r.addEventListener('input',()=>{drag=true;$$('.tcur').forEach(e=>e.textContent=fmt(r.value/1000*(audio.duration||0)))});r.addEventListener('change',()=>{drag=false;if(audio.duration)audio.currentTime=r.value/1000*audio.duration})});
+/* ---------- lydnivå og equalizer (bass og diskant) ---------- */
 let vol=90;try{vol=+(localStorage.getItem('ml-vol')??90)}catch{}
-const setVol=v=>{vol=v;audio.volume=v/100;$$('.volr').forEach(r=>r.value=v)};setVol(vol);
-$$('.volr').forEach(r=>r.addEventListener('input',()=>{setVol(+r.value);try{localStorage.setItem('ml-vol',r.value)}catch{}}));
+let EQ={bass:0,treble:0};try{Object.assign(EQ,JSON.parse(localStorage.getItem('ml-eq')||'{}'))}catch{}
+let G=null;
+function graph(){
+  if(G)return G;
+  try{
+    const C=new (window.AudioContext||window.webkitAudioContext)();
+    const src=C.createMediaElementSource(audio);
+    const bass=C.createBiquadFilter();bass.type='lowshelf';bass.frequency.value=180;
+    const treble=C.createBiquadFilter();treble.type='highshelf';treble.frequency.value=3500;
+    const pre=C.createGain(),out=C.createGain();
+    src.connect(pre);pre.connect(bass);bass.connect(treble);treble.connect(out);out.connect(C.destination);
+    G={C,bass,treble,pre,out};audio.volume=1;applyAudio();
+  }catch(e){console.error(e)}
+  return G;
+}
+const eqOn=()=>EQ.bass!==0||EQ.treble!==0;
+function applyAudio(){
+  if(!G){audio.volume=vol/100;return}
+  const t=G.C.currentTime,boost=Math.max(0,EQ.bass,EQ.treble);
+  G.bass.gain.setTargetAtTime(EQ.bass,t,.03);G.treble.gain.setTargetAtTime(EQ.treble,t,.03);
+  G.pre.gain.setTargetAtTime(Math.pow(10,-boost*.6/20),t,.03);
+  G.out.gain.setTargetAtTime((vol/100)**1.6,t,.03);
+}
+const wake=()=>{if(G&&G.C.state!=='running')G.C.resume().catch(()=>{})};
+audio.addEventListener('play',()=>{if(eqOn())graph();wake()});
+document.addEventListener('visibilitychange',wake);
+const setVol=v=>{vol=v;$$('.volr').forEach(r=>r.value=v);applyAudio()};setVol(vol);
+$$('.volr').forEach(r=>r.addEventListener('input',()=>{if(/iPhone|iPad|iPod/.test(navigator.userAgent))graph();wake();setVol(+r.value);try{localStorage.setItem('ml-vol',r.value)}catch{}}));
+const PRE=[['Normal',0,0],['Mer bass',6,0],['Bass-boost',10,2],['Klar lyd',-2,5],['Myk',2,-5]];
+function eqSheet(){
+  const row=(k,l)=>`<div class="eqv"><b>${l}</b><input type="range" min="-12" max="12" step="1" value="${EQ[k]}" data-eq="${k}" aria-label="${l}"><output id="o-${k}"></output></div>`;
+  modal(`<h2>Bass og diskant</h2>${row('bass','Bass')}${row('treble','Diskant')}<div class="pre">${PRE.map(p=>`<button data-m="pre" data-b="${p[1]}" data-t="${p[2]}">${p[0]}</button>`).join('')}</div><p style="color:var(--mut);font-size:14px;margin:10px 0 0">Endringen høres med en gang og huskes til neste gang.</p><button class="line" data-m="close" style="margin-top:8px">Ferdig</button>`,
+  {act:(m,b)=>{if(m==='pre')setEq(+b.dataset.b,+b.dataset.t)}});
+  $$('#sheet [data-eq]').forEach(r=>r.addEventListener('input',()=>{const o={...EQ};o[r.dataset.eq]=+r.value;setEq(o.bass,o.treble)}));
+  showEq();
+}
+const sgn=v=>(v>0?'+':'')+v+' dB';
+function showEq(){
+  for(const k of ['bass','treble']){const o=$('#o-'+k);if(o)o.textContent=sgn(EQ[k]);const r=$(`#sheet [data-eq=${k}]`);if(r)r.value=EQ[k]}
+  $$('#sheet .pre button').forEach(b=>b.classList.toggle('on',+b.dataset.b===EQ.bass&&+b.dataset.t===EQ.treble));
+}
+function setEq(b,t){EQ={bass:b,treble:t};try{localStorage.setItem('ml-eq',JSON.stringify(EQ))}catch{}if(eqOn()||G){graph();wake()}applyAudio();showEq()}
 if('mediaSession' in navigator){const ms=navigator.mediaSession;[['play',()=>audio.play()],['pause',()=>audio.pause()],['nexttrack',()=>next(false)],['previoustrack',prev],['seekto',d=>{audio.currentTime=d.seekTime}]].forEach(([a,f])=>{try{ms.setActionHandler(a,f)}catch{}})}
 addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(!$('#modal').hidden)close();else $('#np').hidden=true;return}
