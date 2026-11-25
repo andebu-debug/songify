@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 8: gjør om WMA til MP3 -->
+<!-- versjon 9: retting av WMA-omgjøring -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -379,7 +379,7 @@ function loadFF(){
     await loadScript(`https://unpkg.com/@ffmpeg/ffmpeg@${FV}/dist/umd/ffmpeg.js`);
     await loadScript(`https://unpkg.com/@ffmpeg/util@${UV}/dist/umd/index.js`);
     const {FFmpeg}=window.FFmpegWASM,{toBlobURL}=window.FFmpegUtil;
-    const ff=new FFmpeg(),base=`https://unpkg.com/@ffmpeg/core@${CV}/dist/umd`;
+    const ff=new FFmpeg(),base=`https://unpkg.com/@ffmpeg/core@${CV}/dist/esm`;
     await ff.load({
       coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
       wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm'),
