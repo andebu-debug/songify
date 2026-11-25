@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 12: album deles med alle -->
+<!-- versjon 11: admin deler alltid -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -226,7 +226,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 
 <div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="drop" id="drop" hidden>Slipp låtene her</div>
-<div class="selbar" id="selbar" hidden><b id="selc">0 valgt</b><button class="btn ghost" data-sel="all">Velg alle</button><button class="btn ghost" data-sel="cancel">Avbryt</button><button class="btn ghost" data-sel="rm" id="selrm">Fjern fra lista</button><button class="btn ghost danger" data-sel="del">Slett</button><button class="btn ghost" data-sel="share" id="selshare" hidden>Del med alle</button><button class="btn ghost" data-sel="unshare" id="selunshare" hidden>Slutt å dele</button><button class="btn ghost" data-sel="add">Legg i album / spilleliste</button><button class="btn" data-sel="new">+ Nytt album / spilleliste</button></div>
+<div class="selbar" id="selbar" hidden><b id="selc">0 valgt</b><button class="btn ghost" data-sel="all">Velg alle</button><button class="btn ghost" data-sel="cancel">Avbryt</button><button class="btn ghost" data-sel="rm" id="selrm">Fjern fra lista</button><button class="btn ghost danger" data-sel="del">Slett</button><button class="btn ghost" data-sel="add">Legg i album / spilleliste</button><button class="btn" data-sel="new">+ Nytt album / spilleliste</button></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -272,8 +272,6 @@ const S={songs:[],hidden:new Set(),likes:new Set(),pls:[],people:{},tab:'mine',p
 const song=id=>S.songs.find(s=>s.id===id);
 const curId=()=>S.queue[S.qi];
 const mine=s=>s.owner===me.id;
-const ownPl=p=>!!p&&p.owner===me.id;
-const curPl=()=>S.pls.find(p=>p.id===S.pl);
 
 /* signerte lenker til filene (gyldige i 12 timer) */
 const signed=new Map();
@@ -319,7 +317,7 @@ async function load(){
     sb.from('ml_playlists').select('*').order('created_at')
   ]);
   if(a.error){S.loading=false;$('#view').innerHTML=`<p class="none">Fikk ikke hentet låtene: ${esc(a.error.message)}</p>`;return}
-  S.songs=a.data||[];S.hidden=new Set((b.data||[]).map(x=>x.song_id));S.likes=new Set((c.data||[]).map(x=>x.song_id));S.pls=(d.data||[]).filter(p=>p.owner===me.id||p.shared);
+  S.songs=a.data||[];S.hidden=new Set((b.data||[]).map(x=>x.song_id));S.likes=new Set((c.data||[]).map(x=>x.song_id));S.pls=d.data||[];
   if(admin){const {data:p}=await sb.from('ml_profiles').select('id,name');S.people={};(p||[]).forEach(x=>S.people[x.id]=x.name||('Bruker '+x.id.slice(0,4)))}
   await signMany(S.songs.flatMap(s=>[s.file_path,s.cover_path]));
   loadedAt=Date.now();S.loading=false;render();now();setTimeout(fixDurations,1500);
@@ -331,17 +329,9 @@ let shareNew=true;try{shareNew=localStorage.getItem('ml-share')!=='0'}catch{}
 $('#acc').onclick=()=>{
   modal(`<h2>Deg</h2>
   <form id="nameform"><label class="field"><span>Navnet ditt (valgfritt)</span><input name="name" value="${esc(myName)}" maxlength="40" placeholder="F.eks. Andreas"></label><button class="btn ghost">Lagre navn</button></form>
-  ${admin?`<p class="lbl">Du er admin på denne enheten.</p><label class="check"><input type="checkbox" id="shr" ${shareNew?'checked':''}><span><b>Del nye låter og album jeg lager med alle</b><br><small style="color:var(--mut)">Da havner de i biblioteket til alle som har appen.</small></span></label>${(()=>{const n=S.songs.filter(s=>mine(s)&&!s.shared).length,a=S.pls.filter(p=>ownPl(p)&&!p.shared).length;return n||a?`<button class="btn" data-m="shareall" style="width:100%;margin-top:4px">Del alle mine låter og album med alle</button><p style="color:var(--mut);font-size:14px;margin:6px 0 0">${ant(n)} og ${a} ${a===1?'album':'album'} er ikke delt ennå.</p>`:'<p style="color:var(--mut);font-size:14px">Alle låtene og albumene dine er delt med alle.</p>'})()}`
-  :`<form id="adminform"><p class="lbl">Er du admin? Skriv inn admin-koden.</p><label class="field"><span>Admin-kode</span><input name="code" type="password" autocomplete="off"></label><button class="btn ghost">Bli admin</button></form>`}
-  <p style="color:var(--mut);font-size:14px;margin:16px 0 0">Låtene du laster opp er bare dine, og hører til denne enheten og nettleseren. Felles låter får du uansett.${admin?' Vil du at andre (eller dine andre enheter) skal få låtene dine, må de deles med alle.':''}</p>
-  <button class="line" data-m="close" style="margin-top:8px">Lukk</button>`,{act:async m=>{
-    if(m!=='shareall')return;
-    const ids=S.songs.filter(s=>mine(s)&&!s.shared).map(s=>s.id),pls=S.pls.filter(p=>ownPl(p)&&!p.shared);
-    close();toast('Deler …',true);
-    if(ids.length){const {error}=await sb.from('ml_songs').update({shared:true}).in('id',ids);if(error)return toast('Kunne ikke dele låtene: '+error.message);ids.forEach(i=>{const s=song(i);if(s)s.shared=true})}
-    if(pls.length){const {error}=await sb.from('ml_playlists').update({shared:true}).in('id',pls.map(p=>p.id));if(error){render();return toast(/shared/i.test(error.message)?'Låtene er delt. For album: kjør den nye SQL-en i Supabase først':'Kunne ikke dele albumene: '+error.message)}pls.forEach(p=>p.shared=true)}
-    render();toast(`${ant(ids.length)} og ${pls.length} album er nå delt med alle`);
-  },submit:async f=>{
+  ${admin?`<p class="lbl">Du er admin på denne enheten. Alt du laster opp deles automatisk med alle.</p>`:`<form id="adminform"><p class="lbl">Er du admin? Skriv inn admin-koden.</p><label class="field"><span>Admin-kode</span><input name="code" type="password" autocomplete="off"></label><button class="btn ghost">Bli admin</button></form>`}
+  <p style="color:var(--mut);font-size:14px;margin:16px 0 0">Låtene du laster opp er bare dine, og hører til denne enheten og nettleseren. Felles låter får du uansett.</p>
+  <button class="line" data-m="close" style="margin-top:8px">Lukk</button>`,{submit:async f=>{
     if(f.has('code')){const {data,error}=await sb.rpc('ml_claim_admin',{p_code:f.get('code')});if(error||!data)return toast('Feil kode');close();await checkAdmin();await load();toast('Du er nå admin');}
     else{const name=(f.get('name')||'').trim();const {error}=await sb.from('ml_profiles').update({name}).eq('id',me.id);if(error)return toast('Kunne ikke lagre');myName=name;accBtn();close();toast('Navnet er lagret')}
   }});
@@ -444,7 +434,7 @@ function addFiles(list,target=null){
 async function runUploads(){
   upRun=true;const st={n:0,big:0,fail:0};let share=false;const added=[];
   while(UQ.length){
-    let {f,pl:tgt,conv}=UQ.shift();upDone++;share=admin&&shareNew;
+    let {f,pl:tgt,conv}=UQ.shift();upDone++;share=admin;
     if(conv){toast(`Gjør om ${upDone} av ${upTotal} til MP3 …${!st.cv?' (første gang tar det litt tid)':''}`,true);try{f=await toMp3(f);st.cv=(st.cv||0)+1}catch(e){console.error(e);st.cf=(st.cf||0)+1;continue}}
     if(f.size>50*1048576){st.big++;continue}
     toast(`Laster opp ${upDone} av ${upTotal} …`,true);
@@ -471,7 +461,7 @@ async function runUploads(){
   toast(parts.join(' · ')||'Ingen låter lagt til');
 }
 let upTarget=null;
-const curTarget=()=>S.tab==='pl'&&S.pl&&ownPl(curPl())?S.pl:null;
+const curTarget=()=>S.tab==='pl'&&S.pl?S.pl:null;
 $('#up').onclick=()=>{upTarget=curTarget();$('#file').click()};
 $('#file').onchange=e=>{addFiles(e.target.files,upTarget);e.target.value=''};
 let dc=0;
@@ -513,19 +503,19 @@ function render(){
   if(S.tab==='pl'&&!S.pl){
     v.innerHTML=`<div class="head"><div><h1>Album og spillelister</h1><p>${S.pls.length} ${S.pls.length===1?'liste':'lister'}</p></div><button class="btn" data-act="newpl">+ Nytt album / spilleliste</button></div>
     ${S.pls.length?"":"<p class=\"none\">Du har ingen album eller spillelister ennå. Trykk «+ Nytt album / spilleliste» for å lage den første.</p>"}<div class="grid">
-    ${S.pls.map(p=>{const f=song(p.song_ids[0]);return `<button class="card" data-act="openpl" data-p="${esc(p.id)}">${f?cov(f):`<div class="cv gen" style="--h:${hue(p.name)}">${esc(p.name.charAt(0).toUpperCase())}</div>`}<b>${esc(p.name)}</b><small>${p.song_ids.filter(song).length} låter${p.shared?' · Felles':''}</small></button>`}).join('')}</div>`;
+    ${S.pls.map(p=>{const f=song(p.song_ids[0]);return `<button class="card" data-act="openpl" data-p="${esc(p.id)}">${f?cov(f):`<div class="cv gen" style="--h:${hue(p.name)}">${esc(p.name.charAt(0).toUpperCase())}</div>`}<b>${esc(p.name)}</b><small>${p.song_ids.filter(song).length} låter</small></button>`}).join('')}</div>`;
     return;
   }
   const pl=S.tab==='pl'?S.pls.find(p=>p.id===S.pl):null;
   if(S.tab==='pl'&&!pl){S.pl=null;return render()}
   const L=visible(),tot=L.reduce((a,s)=>a+(s.duration||0),0);
-  const meta={mine:['Biblioteket ditt','Mitt bibliotek',18],liked:['Biblioteket ditt','Likte låter',345],shared:['Delt med alle','Felles låter',200],all:['Kun for admin','Alle brukeres låter',265]}[S.tab]||[pl.shared?'Felles album':'Spilleliste',pl.name,hue(pl.name)];
+  const meta={mine:['Biblioteket ditt','Mitt bibliotek',18],liked:['Biblioteket ditt','Likte låter',345],shared:['Delt med alle','Felles låter',200],all:['Kun for admin','Alle brukeres låter',265]}[S.tab]||['Spilleliste',pl.name,hue(pl.name)];
   const first=pl&&song(pl.song_ids[0]);
   const art=first?cov(first,'cv art'):`<div class="cv art gen" style="--h:${meta[2]}">${S.tab==='liked'?I.heartF:S.tab==='shared'||S.tab==='all'?I.people:pl?esc(pl.name.charAt(0).toUpperCase()):'♪'}</div>`;
   const mb=(library().filter(mine).reduce((a,s)=>a+(s.size||0),0)/1048576).toFixed(0);
   v.innerHTML=`${pl?'<button class="back" data-act="back">← Alle spillelister</button>':''}
   <section class="hero" style="--h:${meta[2]}">${art}<div><p class="kind">${meta[0]}</p><h1>${esc(meta[1])}</h1><p>${L.length} ${L.length===1?'låt':'låter'} · ${long(tot)}${S.q?` · søk: «${esc(S.q)}»`:''}</p>
-  <div class="hb"><button class="btn" data-act="playall">${I.play} Spill</button><button class="btn ghost" data-act="shuffleall">${I.shuf} Tilfeldig</button>${L.length?'<button class="btn ghost" data-act="select">Velg låter</button>':''}${pl?(ownPl(pl)?'<button class="btn ghost" data-act="uphere">Last opp hit</button><button class="btn ghost" data-act="renpl">Gi nytt navn</button><button class="btn ghost" data-act="delpl">Slett liste</button>':'')+(admin?`<button class="btn ghost" data-act="sharepl">${pl.shared?'Slutt å dele album':'Del album med alle'}</button>`:''):''}</div></div></section>
+  <div class="hb"><button class="btn" data-act="playall">${I.play} Spill</button><button class="btn ghost" data-act="shuffleall">${I.shuf} Tilfeldig</button>${L.length?'<button class="btn ghost" data-act="select">Velg låter</button>':''}${pl?'<button class="btn ghost" data-act="uphere">Last opp hit</button><button class="btn ghost" data-act="renpl">Gi nytt navn</button><button class="btn ghost" data-act="delpl">Slett liste</button>':''}</div></div></section>
   ${(()=>{const n=S.songs.filter(s=>mine(s)&&CONV.test(s.file_path)).length;return n?`<div class="msg" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 12px"><span style="flex:1;min-width:200px">${ant(n)} er i WMA-format og kan ikke spilles. Appen kan gjøre dem om til MP3 for deg.</span><button class="btn" data-act="convall">Gjør om til MP3</button></div>`:''})()}
   ${(()=>{if(S.tab!=='mine'||S.q.trim())return '';const P=inPl(),n=library().filter(s=>P.has(s.id)).length;return n?`<button class="chip" data-act="showall">${n} ${n===1?'låt ligger':'låter ligger'} i spillelister · ${S.showAll?'Skjul dem her':'Vis dem her også'}</button>`:''})()}
   ${L.length>1?`<div class="tools"><label class="sort">Sorter <select id="sortsel">${SORTS.map(([v,l])=>`<option value="${v}"${S.sort===v?' selected':''}>${v==='auto'&&pl?'Rekkefølgen i lista':l}</option>`).join('')}</select></label></div>`:''}
@@ -558,7 +548,6 @@ $('#view').addEventListener('click',e=>{
     if(act==='liked')return setTab('liked');
     if(act==='back'){S.sel=null;selbar();S.pl=null;render();return}
     if(act==='renpl')return renPl();
-    if(act==='sharepl')return sharePl();
     if(act==='delpl')return delPl();
     return;
   }
@@ -594,9 +583,9 @@ async function hide(id,on){
 async function savePl(p){const {error}=await sb.from('ml_playlists').update({name:p.name,song_ids:p.song_ids}).eq('id',p.id);if(error)toast('Kunne ikke lagre spillelista')}
 function more(id){
   const s=song(id);if(!s)return;
-  const own=mine(s),hid=s.shared&&!own&&S.hidden.has(id),inPl=S.tab==='pl'&&S.pl&&ownPl(curPl());
+  const own=mine(s),hid=s.shared&&!own&&S.hidden.has(id),inPl=S.tab==='pl'&&S.pl;
   modal(`<div class="mh">${cov(s)}<div class="tt"><b>${esc(s.title)}</b><small>${esc(s.artist||'Ukjent artist')}</small></div></div>
-  <p class="lbl">Legg i album / spilleliste</p><div class="opts">${S.pls.filter(ownPl).map(p=>`<button data-m="add" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('')}<button data-m="newadd">+ Nytt album / spilleliste</button></div>
+  <p class="lbl">Legg i album / spilleliste</p><div class="opts">${S.pls.map(p=>`<button data-m="add" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('')}<button data-m="newadd">+ Nytt album / spilleliste</button></div>
   ${curId()?'<button class="line" data-m="next">Spill som neste</button>':''}
   ${inPl?'<button class="line" data-m="rm">Fjern fra denne spillelisten</button>':''}
   ${own||admin?'<button class="line" data-m="edit">Endre navn, artist og album</button>':''}
@@ -622,15 +611,7 @@ function edit(id){const s=song(id);
 }
 function ask(title,val,cb){modal(`<form><h2>${esc(title)}</h2><label class="field"><span>Navn</span><input name="v" value="${esc(val)}" maxlength="80" required></label><div class="acts"><button type="button" class="btn ghost" data-m="close">Avbryt</button><button class="btn">Lagre</button></div></form>`,{submit:f=>{const v=f.get('v').trim();if(v){close();cb(v)}}})}
 function confirmBox(text,yes,cb){modal(`<h2>Er du sikker?</h2><p>${esc(text)}</p><div class="acts"><button class="btn ghost" data-m="close">Avbryt</button><button class="btn" data-m="yes">${esc(yes)}</button></div>`,{act:m=>{if(m==='yes'){close();cb()}}})}
-function newPl(addId){ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:addId?[addId]:[],...(admin&&shareNew?{shared:true}:{})}).select().single();if(error)return toast('Kunne ikke lage lista');S.pls.push(data);if(!addId){S.sel=null;selbar();S.tab='pl';S.pl=data.id;scrollTo(0,0)}render();toast(addId?'Lagt i «'+name+'»':'«'+name+'» er laget – trykk «Last opp hit» for å legge inn sanger')})}
-async function sharePl(){
-  const p=curPl();if(!p)return;const on=!p.shared;
-  const {error}=await sb.from('ml_playlists').update({shared:on}).eq('id',p.id);
-  if(error)return toast(/shared/i.test(error.message)?'Kjør den nye SQL-en i Supabase først (se LES-MEG)':'Kunne ikke endre: '+error.message);
-  p.shared=on;
-  if(on){const ids=p.song_ids.filter(i=>{const x=song(i);return x&&!x.shared});if(ids.length){const r=await sb.from('ml_songs').update({shared:true}).in('id',ids);if(!r.error)ids.forEach(i=>song(i).shared=true)}}
-  render();toast(on?`«${p.name}» og låtene i det er delt med alle`:`«${p.name}» er ikke delt lenger`);
-}
+function newPl(addId){ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:addId?[addId]:[]}).select().single();if(error)return toast('Kunne ikke lage lista');S.pls.push(data);if(!addId){S.sel=null;selbar();S.tab='pl';S.pl=data.id;scrollTo(0,0)}render();toast(addId?'Lagt i «'+name+'»':'«'+name+'» er laget – trykk «Last opp hit» for å legge inn sanger')})}
 function renPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)ask('Gi nytt navn',p.name,name=>{p.name=name;render();savePl(p)})}
 function delPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)confirmBox(`Slette spillelista «${p.name}»? Låtene går tilbake til «Mitt bibliotek».`,'Slett liste',async()=>{const {error}=await sb.from('ml_playlists').delete().eq('id',p.id);if(error)return toast('Kunne ikke slette');S.pls=S.pls.filter(x=>x!==p);S.pl=null;render()})}
 async function delSong(id,quiet){
@@ -651,29 +632,21 @@ const ant=n=>`${n} ${n===1?'låt':'låter'}`;
 function selbar(){
   $('#selbar').hidden=!S.sel;if(!S.sel)return;
   $('#selc').textContent=`${S.sel.size} valgt`;
-  $('#selrm').hidden=!(S.tab==='pl'&&S.pl&&ownPl(curPl()));
-  $('#selshare').hidden=!admin;$('#selunshare').hidden=!admin;
+  $('#selrm').hidden=!(S.tab==='pl'&&S.pl);
 }
 function endSel(r=true){S.sel=null;selbar();if(r)render()}
 async function fromSource(ids,target){
-  if(S.tab==='pl'&&S.pl&&S.pl!==target){const p=S.pls.find(x=>x.id===S.pl);if(p&&ownPl(p)){p.song_ids=p.song_ids.filter(i=>!ids.includes(i));await savePl(p)}}
+  if(S.tab==='pl'&&S.pl&&S.pl!==target){const p=S.pls.find(x=>x.id===S.pl);if(p){p.song_ids=p.song_ids.filter(i=>!ids.includes(i));await savePl(p)}}
 }
-$('#selbar').addEventListener('click',async e=>{
+$('#selbar').addEventListener('click',e=>{
   const b=e.target.closest('[data-sel]');if(!b)return;const k=b.dataset.sel;
   if(k==='cancel')return endSel();
   if(k==='all'){const all=visible().map(s=>s.id),every=all.length&&all.every(i=>S.sel.has(i));S.sel=every?new Set():new Set(all);render();selbar();return}
   const ids=visible().filter(s=>S.sel.has(s.id)).map(s=>s.id);
   if(!ids.length)return toast('Velg minst én låt først');
   if(k==='new')return newFromSel(ids);
-  if(k==='share'||k==='unshare'){
-    const on=k==='share';toast(on?'Deler …':'Slutter å dele …',true);
-    const {error}=await sb.from('ml_songs').update({shared:on}).in('id',ids);
-    if(error)return toast('Kunne ikke endre: '+error.message);
-    ids.forEach(i=>{const s=song(i);if(s)s.shared=on});
-    endSel();toast(on?`${ant(ids.length)} er nå delt med alle`:`${ant(ids.length)} er ikke delt lenger`);return;
-  }
   if(k==='add'){
-    const others=S.pls.filter(p=>p.id!==S.pl&&ownPl(p));
+    const others=S.pls.filter(p=>p.id!==S.pl);
     modal(`<h2>Legg ${ant(ids.length)} i …</h2>${others.length?`<div class="opts">${others.map(p=>`<button data-m="to" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>`:'<p style="color:var(--mut)">Du har ingen album eller spillelister ennå.</p>'}<button class="btn" data-m="new" style="width:100%;margin-top:8px">+ Nytt album / spilleliste</button><button class="line" data-m="close" style="margin-top:8px">Avbryt</button>`,{act:async(m,bt)=>{
       if(m==='new')return newFromSel(ids);
       if(m!=='to')return;const p=S.pls.find(x=>x.id===bt.dataset.p);if(!p)return;close();
@@ -695,7 +668,7 @@ $('#selbar').addEventListener('click',async e=>{
 
 function newFromSel(ids){
   ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{
-    const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:ids,...(admin&&shareNew?{shared:true}:{})}).select().single();
+    const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:ids}).select().single();
     if(error)return toast('Kunne ikke lage lista');
     S.pls.push(data);await fromSource(ids,data.id);endSel(false);
     S.tab='pl';S.pl=data.id;render();scrollTo(0,0);toast(`«${name}» er laget med ${ant(ids.length)}`);
