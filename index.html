@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 9: retting av WMA-omgjøring -->
+<!-- versjon 10: ny WMA-omgjøring -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -375,28 +375,26 @@ let ffP=null;const ffLog=[];let lastErr='';
 function loadFF(){
   if(ffP)return ffP;
   ffP=(async()=>{
-    const FV='0.12.10',UV='0.12.1',CV='0.12.6';
-    await loadScript(`https://unpkg.com/@ffmpeg/ffmpeg@${FV}/dist/umd/ffmpeg.js`);
-    await loadScript(`https://unpkg.com/@ffmpeg/util@${UV}/dist/umd/index.js`);
-    const {FFmpeg}=window.FFmpegWASM,{toBlobURL}=window.FFmpegUtil;
-    const ff=new FFmpeg(),base=`https://unpkg.com/@ffmpeg/core@${CV}/dist/esm`;
-    await ff.load({
-      coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
-      wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm'),
-      classWorkerURL:await toBlobURL(`https://unpkg.com/@ffmpeg/ffmpeg@${FV}/dist/umd/814.ffmpeg.js`,'text/javascript')
-    });
-    ff.on('log',({message})=>{ffLog.push(message);if(ffLog.length>8)ffLog.shift()});
-    return ff;
-  })().catch(e=>{ffP=null;e.message='Lasting av FFmpeg: '+(e.message||e);throw e});
+    const base='https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+    let mod;try{mod=await import(base+'/ffmpeg-core.js')}catch(e){throw new Error('Fikk ikke lastet ffmpeg-core.js: '+(e.message||e))}
+    const core=await mod.default({mainScriptUrlOrBlob:base+'/ffmpeg-core.js#'+btoa(JSON.stringify({wasmURL:base+'/ffmpeg-core.wasm'}))});
+    try{core.setLogger(({message})=>{ffLog.push(message);if(ffLog.length>8)ffLog.shift()})}catch{}
+    return core;
+  })().catch(e=>{ffP=null;throw e});
   return ffP;
 }
 let ffN=0;
 async function toMp3(file){
-  const ff=await loadFF();const n=++ffN,ext=(file.name.match(/\.([a-z0-9]+)$/i)||[,'wma'])[1].toLowerCase();
+  const c=await loadFF();const n=++ffN,ext=(file.name.match(/\.([a-z0-9]+)$/i)||[,'wma'])[1].toLowerCase();
   const inN=`in${n}.${ext}`,outN=`out${n}.mp3`;
-  await ff.writeFile(inN,new Uint8Array(await file.arrayBuffer()));
-  await ff.exec(['-i',inN,'-vn','-ar','44100','-ac','2','-b:a','192k','-id3v2_version','3',outN]);
-  let data;try{data=await ff.readFile(outN)}catch(e){throw new Error('Ingen MP3 laget: '+ffLog.slice(-3).join(' | '))}finally{ff.deleteFile(inN).catch(()=>{});ff.deleteFile(outN).catch(()=>{})}
+  c.FS.writeFile(inN,new Uint8Array(await file.arrayBuffer()));
+  await new Promise(r=>setTimeout(r,30));
+  try{if(c.setTimeout)c.setTimeout(-1)}catch{}
+  c.exec('-i',inN,'-vn','-ar','44100','-ac','2','-b:a','192k','-id3v2_version','3',outN);
+  try{if(c.reset)c.reset()}catch{}
+  let data;
+  try{data=c.FS.readFile(outN)}catch(e){throw new Error('Ingen MP3 laget: '+ffLog.slice(-3).join(' | '))}
+  finally{try{c.FS.unlink(inN)}catch{}try{c.FS.unlink(outN)}catch{}}
   if(!data||!data.length)throw new Error('Tom fil. '+ffLog.slice(-3).join(' | '));
   return new File([data],file.name.replace(/\.[^.]+$/,'')+'.mp3',{type:'audio/mpeg'});
 }
