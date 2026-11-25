@@ -74,6 +74,8 @@ create table if not exists ml_playlists (
   song_ids uuid[] not null default '{}',
   created_at timestamptz not null default now()
 );
+-- Album kan deles med alle (versjon 12)
+alter table ml_playlists add column if not exists shared boolean not null default false;
 
 alter table ml_admin_code enable row level security;
 alter table ml_admin_ids  enable row level security;
@@ -112,7 +114,17 @@ drop policy if exists "ml_likes egne"     on ml_likes;
 drop policy if exists "ml_playlists egne" on ml_playlists;
 create policy "ml_hidden egne"    on ml_hidden    for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "ml_likes egne"     on ml_likes     for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "ml_playlists egne" on ml_playlists for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid());
+drop policy if exists "ml_playlists les"   on ml_playlists;
+drop policy if exists "ml_playlists ny"    on ml_playlists;
+drop policy if exists "ml_playlists endre" on ml_playlists;
+drop policy if exists "ml_playlists slett" on ml_playlists;
+-- Album: du ser dine egne + felles. Admin kan endre og slette alle.
+create policy "ml_playlists les"   on ml_playlists for select to authenticated using (owner = auth.uid() or shared or ml_is_admin());
+create policy "ml_playlists ny"    on ml_playlists for insert to authenticated with check (owner = auth.uid() and (shared = false or ml_is_admin()));
+create policy "ml_playlists endre" on ml_playlists for update to authenticated
+  using (owner = auth.uid() or ml_is_admin())
+  with check (ml_is_admin() or (owner = auth.uid() and shared = false));
+create policy "ml_playlists slett" on ml_playlists for delete to authenticated using (owner = auth.uid() or ml_is_admin());
 
 -- Lagring av lydfiler og cover (privat bøtte, maks 50 MB per fil)
 insert into storage.buckets (id, name, public, file_size_limit)
