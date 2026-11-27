@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 13: offline-album, nedlasting, nedtrekksliste, nye faner -->
+<!-- versjon 14: kø og knapper på låst skjerm -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -132,6 +132,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 .selbar{position:fixed;left:0;right:0;bottom:0;z-index:12;background:var(--pan);border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(0,0,0,.25);padding:12px max(3vw,12px) calc(12px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .selbar b{margin-right:auto;font-size:17px}
 
+.qi{display:flex;gap:12px;align-items:center;padding:6px 0}.qi .tt{flex:1}.qi .cv{width:44px;height:44px}
 .addrow{display:flex;gap:8px;margin-bottom:6px}
 .psel{flex:1;min-width:0;height:44px;border-radius:999px;border:1px solid var(--line);background:var(--pan2);color:var(--ink);font:inherit;font-size:16px;padding:0 14px}
 .tag.o{background:color-mix(in srgb,#2fa86b 28%,transparent)}
@@ -213,7 +214,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
     <div class="btns"><button class="ic side" data-pc="shuf" aria-label="Tilfeldig rekkefølge"></button><button class="ic side" data-pc="prev" aria-label="Forrige"></button><button class="play" data-pc="play" aria-label="Spill / pause"></button><button class="ic" data-pc="next" aria-label="Neste"></button><button class="ic side" data-pc="rep" aria-label="Gjenta"></button></div>
     <div class="prog"><span class="tcur">0:00</span><input class="seek" type="range" min="0" max="1000" value="0" aria-label="Spol"><span class="tdur">0:00</span></div>
   </div>
-  <div class="vol"><button class="ic eqb" data-pc="eq" aria-label="Bass og diskant">EQ</button><span class="ic vi"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Volum"></div>
+  <div class="vol"><button class="ic eqb" data-pc="queue" aria-label="Kø">KØ</button><button class="ic eqb" data-pc="eq" aria-label="Bass og diskant">EQ</button><span class="ic vi"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Volum"></div>
 </footer>
 
 <section class="np" id="np" hidden>
@@ -226,7 +227,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
   <div class="info"><div class="tt"><b id="ntitle"></b><small id="nart"></small></div><button class="ic heart" data-pc="like" aria-label="Lik låten"></button></div>
   <div class="prog"><span class="tcur">0:00</span><input class="seek" type="range" min="0" max="1000" value="0" aria-label="Spol"><span class="trem">-0:00</span></div>
   <div class="btns"><button class="ic" data-pc="shuf" aria-label="Tilfeldig rekkefølge"></button><button class="ic" data-pc="prev" aria-label="Forrige"></button><button class="play" data-pc="play" aria-label="Spill / pause"></button><button class="ic" data-pc="next" aria-label="Neste"></button><button class="ic" data-pc="rep" aria-label="Gjenta"></button></div>
-  <div class="extra"><button class="btn ghost" data-pc="eq"><span class="eqb">EQ</span> Bass og diskant</button></div>
+  <div class="extra" style="gap:10px;flex-wrap:wrap"><button class="btn ghost" data-pc="queue">Kø <span class="qcount"></span></button><button class="btn ghost" data-pc="eq"><span class="eqb">EQ</span> Bass og diskant</button></div>
 </section>
 
 <div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -273,7 +274,7 @@ if(!window.supabase||!cfg.url||!cfg.key||cfg.url.includes('DIN-')||cfg.key.inclu
 const sb=window.supabase.createClient(cfg.url,cfg.key);
 const B='mine-later';
 let me=null,admin=false,recovering=false,loadedAt=0;
-const S={songs:[],hidden:new Set(),likes:new Set(),pls:[],people:{},off:new Set(),offline:false,fromSearch:false,tab:'pl',pl:null,q:'',sel:null,showAll:false,sort:'auto',queue:[],base:[],qi:-1,shuffle:false,repeat:0,loading:true};
+const S={songs:[],hidden:new Set(),likes:new Set(),pls:[],people:{},off:new Set(),offline:false,userQ:[],fromSearch:false,tab:'pl',pl:null,q:'',sel:null,showAll:false,sort:'auto',queue:[],base:[],qi:-1,shuffle:false,repeat:0,loading:true};
 const song=id=>S.songs.find(s=>s.id===id);
 const curId=()=>S.queue[S.qi];
 const mine=s=>s.owner===me.id;
@@ -676,7 +677,8 @@ function more(id){
   const own=mine(s),hid=s.shared&&!own&&S.hidden.has(id),inPl=S.tab==='pl'&&S.pl&&ownPl(curPl());
   modal(`<div class="mh">${cov(s)}<div class="tt"><b>${esc(s.title)}</b><small>${esc(s.artist||'Ukjent artist')}</small></div></div>
   <p class="lbl">Legg i album / spilleliste</p>${plPicker()}<button class="line" data-m="newadd">+ Nytt album / spilleliste</button>
-  ${curId()?'<button class="line" data-m="next">Spill som neste</button>':''}
+  <button class="line" data-m="queue">Legg i kø${S.userQ.length?` (${S.userQ.length} i kø nå)`:''}</button>
+  <button class="line" data-m="next">Spill som neste</button>
   <button class="line" data-m="dl">Last ned låten til enheten</button>
   <button class="line" data-m="off">${S.off.has(id)?'Fjern fra offline':'Lagre offline (spill uten nett)'}</button>
   ${inPl?'<button class="line" data-m="rm">Fjern fra denne spillelisten</button>':''}
@@ -690,7 +692,8 @@ function more(id){
     if(m==='off'){close();if(S.off.has(id)){await dropOffline([id]);render();return toast('Fjernet fra offline')}toast('Lagrer offline …',true);try{await saveOffline(s);render();toast('Lagret offline')}catch(e){console.error(e);toast('Kunne ikke lagre offline')}return}
     if(m==='addsel'){const p=S.pls.find(p=>p.id===$('#plsel').value);if(!p)return;close();if(p.song_ids.includes(id))return toast('Låten er allerede i «'+p.name+'»');const fromLib=S.tab==='mine';p.song_ids=[...p.song_ids,id];render();await savePl(p);toast((fromLib?'Flyttet til «':'Lagt til i «')+p.name+'»')}
     else if(m==='newadd')newPl(id);
-    else if(m==='next'){const i=S.queue.indexOf(id);if(i>-1&&i!==S.qi){S.queue.splice(i,1);if(i<S.qi)S.qi--}if(id!==curId())S.queue.splice(S.qi+1,0,id);toast('Spilles som neste');close()}
+    else if(m==='next'){close();enqueue(id,true)}
+    else if(m==='queue'){close();enqueue(id,false)}
     else if(m==='rm'){const p=S.pls.find(p=>p.id===S.pl);p.song_ids=p.song_ids.filter(x=>x!==id);close();render();savePl(p)}
     else if(m==='edit')edit(id);
     else if(m==='share'){close();const {error}=await sb.from('ml_songs').update({shared:!s.shared}).eq('id',id);if(error)return toast('Kunne ikke endre');s.shared=!s.shared;render();toast(s.shared?'Låten er nå delt med alle':'Låten er ikke delt lenger')}
@@ -721,7 +724,7 @@ async function delSong(id,quiet){
   const {error}=await sb.from('ml_songs').delete().eq('id',id);if(error)return toast('Kunne ikke slette låten');
   sb.storage.from(B).remove([s.file_path,s.cover_path].filter(Boolean));
   const wasCur=id===curId();
-  S.songs=S.songs.filter(x=>x.id!==id);S.likes.delete(id);
+  S.songs=S.songs.filter(x=>x.id!==id);S.likes.delete(id);S.userQ=S.userQ.filter(x=>x!==id);
   for(const p of S.pls)if(p.song_ids.includes(id)){p.song_ids=p.song_ids.filter(x=>x!==id);savePl(p)}
   const i=S.queue.indexOf(id);if(i>-1){S.queue.splice(i,1);S.base=S.base.filter(x=>x!==id);if(i<S.qi)S.qi--}
   if(wasCur){audio.pause();audio.removeAttribute('src');if(S.qi>=S.queue.length)S.qi=S.queue.length-1;if(S.queue.length)load1(false);else{S.qi=-1;now()}}
@@ -810,8 +813,26 @@ function load1(go){
   online();
 }
 function toggle(){if(!curId()){const L=visible();if(L.length)startQueue(L.map(s=>s.id),0);return}if(audio.paused)audio.play().catch(()=>{});else audio.pause()}
-function next(auto){if(!S.queue.length)return;if(S.qi<S.queue.length-1)S.qi++;else if(S.repeat===1||!auto)S.qi=0;else{audio.pause();audio.currentTime=0;return}load1(true)}
+function next(auto){if(S.userQ.length){const id=S.userQ.shift();qBadge();S.queue.splice(S.qi+1,0,id);S.qi++;load1(true);return}if(!S.queue.length)return;if(S.qi<S.queue.length-1)S.qi++;else if(S.repeat===1||!auto)S.qi=0;else{audio.pause();audio.currentTime=0;return}load1(true)}
 function prev(){if(!S.queue.length)return;if(audio.currentTime>3){audio.currentTime=0;return}S.qi=S.qi>0?S.qi-1:(S.repeat===1?S.queue.length-1:0);load1(true)}
+function qBadge(){$$('.qcount').forEach(e=>e.textContent=S.userQ.length?`(${S.userQ.length})`:'')}
+function enqueue(id,first){
+  if(!curId()){startQueue([id],0);return}
+  if(id===curId()&&first)return toast('Låten spilles allerede');
+  S.userQ=S.userQ.filter(x=>x!==id);
+  first?S.userQ.unshift(id):S.userQ.push(id);
+  qBadge();toast(first?'Spilles som neste':`Lagt i kø · ${S.userQ.length} i kø`);
+}
+function queueSheet(){
+  const cur=song(curId()),up=S.userQ.map(song),rest=S.queue.slice(S.qi+1,S.qi+16).map(song).filter(Boolean);
+  const item=(x,i,rm)=>x?`<div class="qi">${cov(x)}<div class="tt"><b>${esc(x.title)}</b><small>${esc(x.artist||'Ukjent artist')}</small></div>${rm?`<button class="ic" data-m="qrm" data-i="${i}" aria-label="Fjern fra køen">✕</button>`:''}</div>`:'';
+  modal(`<h2>Kø</h2>${cur?`<p class="lbl">Spilles nå</p>${item(cur)}`:''}
+  <p class="lbl">Din kø (${S.userQ.length})</p>
+  ${S.userQ.length?up.map((x,i)=>item(x,i,true)).join('')+'<button class="line danger" data-m="qclear">Tøm køen</button>':'<p style="color:var(--mut);font-size:14px;margin:0">Tom. Trykk «…» ved en låt og velg «Legg i kø».</p>'}
+  ${rest.length?`<p class="lbl">Deretter fra lista</p>${rest.map(x=>item(x)).join('')}`:''}
+  <button class="line" data-m="close" style="margin-top:8px">Lukk</button>`,
+  {act:(m,b)=>{if(m==='qrm'){S.userQ.splice(+b.dataset.i,1);qBadge();queueSheet()}else if(m==='qclear'){S.userQ=[];qBadge();queueSheet()}}});
+}
 function modes(){$$('[data-pc=shuf]').forEach(b=>b.classList.toggle('on',S.shuffle));$$('[data-pc=rep]').forEach(b=>{b.classList.toggle('on',S.repeat>0);b.querySelector('.badge').hidden=S.repeat!==2;b.setAttribute('aria-label',['Gjenta: av','Gjenta: alle','Gjenta: én låt'][S.repeat])})}
 function reshuffle(){const c=curId();if(!c)return;if(S.shuffle){S.queue=[c,...shuffle(S.queue.filter(x=>x!==c))];S.qi=0}else{S.queue=[...S.base];S.qi=Math.max(0,S.queue.indexOf(c))}}
 function now(){
@@ -832,10 +853,15 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-pc]');if(!
   else if(c==='rep'){S.repeat=(S.repeat+1)%3;modes();toast(['Gjenta av','Gjentar hele lista','Gjentar denne låten'][S.repeat])}
   else if(c==='like'){if(curId())like(curId())}
   else if(c==='eq')eqSheet();
+  else if(c==='queue')queueSheet();
   else if(c==='open')$('#np').hidden=false;else if(c==='close')$('#np').hidden=true;
 });
-audio.addEventListener('play',()=>document.body.classList.add('playing'));
-audio.addEventListener('pause',()=>document.body.classList.remove('playing'));
+const MS='mediaSession' in navigator?navigator.mediaSession:null;
+audio.addEventListener('play',()=>{document.body.classList.add('playing');if(MS)try{MS.playbackState='playing'}catch{}});
+audio.addEventListener('playing',()=>now());
+audio.addEventListener('pause',()=>{document.body.classList.remove('playing');if(MS)try{MS.playbackState='paused'}catch{}});
+let posT=0;
+audio.addEventListener('timeupdate',()=>{if(!MS||!MS.setPositionState||Date.now()-posT<1000)return;posT=Date.now();const d=audio.duration;if(isFinite(d)&&d>0)try{MS.setPositionState({duration:d,playbackRate:audio.playbackRate||1,position:Math.min(audio.currentTime,d)})}catch{}});
 audio.addEventListener('ended',()=>{if(S.repeat===2){audio.currentTime=0;audio.play().catch(()=>{})}else next(true)});
 audio.addEventListener('error',()=>{if(audio.getAttribute('src'))toast(CONV.test(song(curId())?.file_path||'')?'Denne låten er WMA – trykk «Gjør om til MP3» øverst i lista':'Denne låten kan ikke spilles i denne nettleseren')});
 let drag=false;
@@ -872,11 +898,13 @@ const wake=()=>{if(G&&G.C.state!=='running')G.C.resume().catch(()=>{})};
 audio.addEventListener('play',()=>{if(eqOn())graph();wake()});
 document.addEventListener('visibilitychange',wake);
 const setVol=v=>{vol=v;$$('.volr').forEach(r=>r.value=v);applyAudio()};setVol(vol);
-$$('.volr').forEach(r=>r.addEventListener('input',()=>{if(/iPhone|iPad|iPod/.test(navigator.userAgent))graph();wake();setVol(+r.value);try{localStorage.setItem('ml-vol',r.value)}catch{}}));
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+if(IOS){$$('.volr').forEach(r=>r.hidden=true);$$('.vvol').forEach(e=>e.hidden=true);$$('.vol .vi').forEach(e=>e.hidden=true)}  // iPhone: bruk volumknappene på telefonen
+$$('.volr').forEach(r=>r.addEventListener('input',()=>{wake();setVol(+r.value);try{localStorage.setItem('ml-vol',r.value)}catch{}}));
 const PRE=[['Normal',0,0],['Mer bass',6,0],['Bass-boost',10,2],['Klar lyd',-2,5],['Myk',2,-5]];
 function eqSheet(){
   const row=(k,l)=>`<div class="eqv"><b>${l}</b><input type="range" min="-12" max="12" step="1" value="${EQ[k]}" data-eq="${k}" aria-label="${l}"><output id="o-${k}"></output></div>`;
-  modal(`<h2>Bass og diskant</h2>${row('bass','Bass')}${row('treble','Diskant')}<div class="pre">${PRE.map(p=>`<button data-m="pre" data-b="${p[1]}" data-t="${p[2]}">${p[0]}</button>`).join('')}</div><p style="color:var(--mut);font-size:14px;margin:10px 0 0">Endringen høres med en gang og huskes til neste gang.</p><button class="line" data-m="close" style="margin-top:8px">Ferdig</button>`,
+  modal(`<h2>Bass og diskant</h2>${row('bass','Bass')}${row('treble','Diskant')}<div class="pre">${PRE.map(p=>`<button data-m="pre" data-b="${p[1]}" data-t="${p[2]}">${p[0]}</button>`).join('')}</div><p style="color:var(--mut);font-size:14px;margin:10px 0 0">Endringen høres med en gang og huskes til neste gang.${IOS?' På iPhone kan bass og diskant gjøre at musikken stopper når skjermen låses. Velg «Normal» og lukk appen helt hvis det skjer.':''}</p><button class="line" data-m="close" style="margin-top:8px">Ferdig</button>`,
   {act:(m,b)=>{if(m==='pre')setEq(+b.dataset.b,+b.dataset.t)}});
   $$('#sheet [data-eq]').forEach(r=>r.addEventListener('input',()=>{const o={...EQ};o[r.dataset.eq]=+r.value;setEq(o.bass,o.treble)}));
   showEq();
@@ -887,7 +915,7 @@ function showEq(){
   $$('#sheet .pre button').forEach(b=>b.classList.toggle('on',+b.dataset.b===EQ.bass&&+b.dataset.t===EQ.treble));
 }
 function setEq(b,t){EQ={bass:b,treble:t};try{localStorage.setItem('ml-eq',JSON.stringify(EQ))}catch{}if(eqOn()||G){graph();wake()}applyAudio();showEq()}
-if('mediaSession' in navigator){const ms=navigator.mediaSession;[['play',()=>audio.play()],['pause',()=>audio.pause()],['nexttrack',()=>next(false)],['previoustrack',prev],['seekto',d=>{audio.currentTime=d.seekTime}]].forEach(([a,f])=>{try{ms.setActionHandler(a,f)}catch{}})}
+if(MS){[['play',()=>{wake();audio.play().catch(()=>{})}],['pause',()=>audio.pause()],['stop',()=>audio.pause()],['nexttrack',()=>next(false)],['previoustrack',()=>{audio.currentTime=0;prev()}],['seekto',d=>{if(d.fastSeek&&audio.fastSeek)audio.fastSeek(d.seekTime);else audio.currentTime=d.seekTime}],['seekbackward',null],['seekforward',null]].forEach(([a,f])=>{try{MS.setActionHandler(a,f)}catch{}})}
 addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(!$('#modal').hidden)close();else if(S.sel)endSel();else $('#np').hidden=true;return}
   if(!me||e.target.closest('input,textarea,button'))return;
