@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 12: ekte platespiller -->
+<!-- versjon 13: uten Mitt bibliotek, rullegardin, legg til i kø -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -144,6 +144,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 .eqv b{font-weight:600}.eqv output{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
 .pre{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}.pre button{height:40px;padding:0 14px;border-radius:999px;background:var(--pan2)}.pre button.on{background:var(--acc);color:var(--on)}
 .eqb{font-size:13px;font-weight:700;letter-spacing:.02em}
+.pick{display:flex;gap:8px;margin-bottom:10px}.pick select{flex:1;min-width:0;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--pan2);color:var(--ink);font:inherit;font-size:16px;padding:0 12px}
 .tools{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:0 0 8px;flex-wrap:wrap}
 .sort{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:14px}
 .sort select{height:40px;border-radius:999px;border:1px solid var(--line);background:var(--pan2);color:var(--ink);font:inherit;font-size:15px;padding:0 14px}
@@ -225,7 +226,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
   <label class="search"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="q" type="search" placeholder="Søk etter låt, artist eller album" aria-label="Søk"></label>
   <input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.oga,.opus" multiple hidden>
 </header>
-<nav class="tabs"><button data-tab="mine">Mitt bibliotek</button><button data-tab="liked">Likte låter</button><button data-tab="pl">Album og lister</button><button data-tab="shared">Felles</button><button data-tab="all" id="taball" hidden>Alle brukere</button></nav>
+<nav class="tabs"><button data-tab="liked">Likte låter</button><button data-tab="pl">Album og lister</button><button data-tab="shared">Felles</button><button data-tab="all" id="taball" hidden>Alle brukere</button></nav>
 <main id="view"><p class="loading">Henter låtene dine …</p></main>
 </div>
 
@@ -325,7 +326,7 @@ if(!window.supabase||!cfg.url||!cfg.key||cfg.url.includes('DIN-')||cfg.key.inclu
 const sb=window.supabase.createClient(cfg.url,cfg.key);
 const B='mine-later';
 let me=null,admin=false,recovering=false,loadedAt=0;
-const S={songs:[],hidden:new Set(),likes:new Set(),pls:[],people:{},tab:'mine',pl:null,q:'',sel:null,showAll:false,sort:'auto',queue:[],base:[],qi:-1,shuffle:false,repeat:0,loading:true};
+const S={songs:[],hidden:new Set(),likes:new Set(),pls:[],people:{},tab:'pl',pl:null,q:'',sel:null,showAll:false,sort:'auto',queue:[],base:[],qi:-1,shuffle:false,repeat:0,loading:true};
 const song=id=>S.songs.find(s=>s.id===id);
 const curId=()=>S.queue[S.qi];
 const mine=s=>s.owner===me.id;
@@ -365,7 +366,7 @@ async function enter(user){
 }
 let myName='';
 const accBtn=()=>{$('#acc').textContent=(myName||'?').charAt(0).toUpperCase()};
-async function checkAdmin(){const {data}=await sb.rpc('ml_is_admin');admin=!!data;$('#taball').hidden=!admin;if(!admin&&S.tab==='all')S.tab='mine'}
+async function checkAdmin(){const {data}=await sb.rpc('ml_is_admin');admin=!!data;$('#taball').hidden=!admin;if(!admin&&S.tab==='all')S.tab='pl'}
 async function load(){
   const [a,b,c,d]=await Promise.all([
     sb.from('ml_songs').select('*').order('created_at',{ascending:false}).range(0,4999),
@@ -566,7 +567,7 @@ function render(){
   const pl=S.tab==='pl'?S.pls.find(p=>p.id===S.pl):null;
   if(S.tab==='pl'&&!pl){S.pl=null;return render()}
   const L=visible(),tot=L.reduce((a,s)=>a+(s.duration||0),0);
-  const meta={mine:['Biblioteket ditt','Mitt bibliotek',18],liked:['Biblioteket ditt','Likte låter',345],shared:['Delt med alle','Felles låter',200],all:['Kun for admin','Alle brukeres låter',265]}[S.tab]||['Spilleliste',pl.name,hue(pl.name)];
+  const meta={mine:['Søk','Søkeresultater',18],liked:['Biblioteket ditt','Likte låter',345],shared:['Delt med alle','Felles låter',200],all:['Kun for admin','Alle brukeres låter',265]}[S.tab]||['Spilleliste',pl.name,hue(pl.name)];
   const first=pl&&song(pl.song_ids[0]);
   const art=first?cov(first,'cv art'):`<div class="cv art gen" style="--h:${meta[2]}">${S.tab==='liked'?I.heartF:S.tab==='shared'||S.tab==='all'?I.people:pl?esc(pl.name.charAt(0).toUpperCase()):'♪'}</div>`;
   const mb=(library().filter(mine).reduce((a,s)=>a+(s.size||0),0)/1048576).toFixed(0);
@@ -587,7 +588,7 @@ function render(){
 }
 const setTab=t=>{S.tab=t;S.pl=null;S.sel=null;selbar();render();scrollTo(0,0)};
 $$('.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-$('#q').addEventListener('input',e=>{S.q=e.target.value;if(S.tab==='pl'&&!S.pl)S.tab='mine';render()});
+$('#q').addEventListener('input',e=>{S.q=e.target.value;if(S.q.trim()){if(S.tab==='pl'){S.tab='mine';S.pl=null}}else if(S.tab==='mine')S.tab='pl';render()});
 $('#view').addEventListener('click',e=>{
   const a=e.target.closest('[data-act]'),row=e.target.closest('.row');
   if(S.sel&&row){const id=row.dataset.id;S.sel.has(id)?S.sel.delete(id):S.sel.add(id);render();selbar();return}
@@ -644,8 +645,8 @@ function more(id){
   const s=song(id);if(!s)return;
   const own=mine(s),hid=s.shared&&!own&&S.hidden.has(id),inPl=S.tab==='pl'&&S.pl;
   modal(`<div class="mh">${cov(s)}<div class="tt"><b>${esc(s.title)}</b><small>${esc(s.artist||'Ukjent artist')}</small></div></div>
-  <p class="lbl">Legg i album / spilleliste</p><div class="opts">${S.pls.map(p=>`<button data-m="add" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('')}<button data-m="newadd">+ Nytt album / spilleliste</button></div>
-  ${curId()?'<button class="line" data-m="next">Spill som neste</button>':''}
+  <p class="lbl">Legg i album / spilleliste</p>${S.pls.length?`<div class="pick"><select id="plpick" aria-label="Velg album">${[...S.pls].sort((a,b)=>coll.compare(a.name,b.name)).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><button class="btn" data-m="add">Legg til</button></div>`:''}<button class="btn ghost" data-m="newadd" style="width:100%;margin-bottom:8px">+ Nytt album / spilleliste</button>
+  <button class="line" data-m="next">Legg til i kø</button>
   ${inPl?'<button class="line" data-m="rm">Fjern fra denne spillelisten</button>':''}
   ${own||admin?'<button class="line" data-m="edit">Endre navn, artist og album</button>':''}
   ${admin?`<button class="line" data-m="share">${s.shared?'Slutt å dele med alle':'Del med alle (gjør til felles låt)'}</button>`:''}
@@ -653,9 +654,9 @@ function more(id){
   ${s.shared&&!own&&!hid?'<button class="line danger" data-m="hide">Fjern fra biblioteket mitt</button>':''}
   ${own||admin?`<button class="line danger" data-m="del">${own?'Slett låten':'Slett låten for godt (admin)'}</button>`:''}
   <button class="line" data-m="close">Lukk</button>`,{act:async(m,b)=>{
-    if(m==='add'){const p=S.pls.find(p=>p.id===b.dataset.p);if(!p)return;close();if(p.song_ids.includes(id))return toast('Låten er allerede i «'+p.name+'»');const fromLib=S.tab==='mine';p.song_ids=[...p.song_ids,id];render();await savePl(p);toast((fromLib?'Flyttet til «':'Lagt til i «')+p.name+'»')}
+    if(m==='add'){const p=S.pls.find(p=>p.id===$('#plpick').value);if(!p)return;close();if(p.song_ids.includes(id))return toast('Låten er allerede i «'+p.name+'»');const fromLib=S.tab==='mine';p.song_ids=[...p.song_ids,id];render();await savePl(p);toast('Lagt til i «'+p.name+'»')}
     else if(m==='newadd')newPl(id);
-    else if(m==='next'){const i=S.queue.indexOf(id);if(i>-1&&i!==S.qi){S.queue.splice(i,1);if(i<S.qi)S.qi--}if(id!==curId())S.queue.splice(S.qi+1,0,id);toast('Spilles som neste');close()}
+    else if(m==='next'){close();if(!curId()){S.base=[id];S.queue=[id];S.qi=0;load1(true);return}S.queue.push(id);S.base.push(id);toast('Lagt til i køen')}
     else if(m==='rm'){const p=S.pls.find(p=>p.id===S.pl);p.song_ids=p.song_ids.filter(x=>x!==id);close();render();savePl(p)}
     else if(m==='edit')edit(id);
     else if(m==='share'){close();const {error}=await sb.from('ml_songs').update({shared:!s.shared}).eq('id',id);if(error)return toast('Kunne ikke endre');s.shared=!s.shared;render();toast(s.shared?'Låten er nå delt med alle':'Låten er ikke delt lenger')}
@@ -672,7 +673,7 @@ function ask(title,val,cb){modal(`<form><h2>${esc(title)}</h2><label class="fiel
 function confirmBox(text,yes,cb){modal(`<h2>Er du sikker?</h2><p>${esc(text)}</p><div class="acts"><button class="btn ghost" data-m="close">Avbryt</button><button class="btn" data-m="yes">${esc(yes)}</button></div>`,{act:m=>{if(m==='yes'){close();cb()}}})}
 function newPl(addId){ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:addId?[addId]:[]}).select().single();if(error)return toast('Kunne ikke lage lista');S.pls.push(data);if(!addId){S.sel=null;selbar();S.tab='pl';S.pl=data.id;scrollTo(0,0)}render();toast(addId?'Lagt i «'+name+'»':'«'+name+'» er laget – trykk «Last opp hit» for å legge inn sanger')})}
 function renPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)ask('Gi nytt navn',p.name,name=>{p.name=name;render();savePl(p)})}
-function delPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)confirmBox(`Slette spillelista «${p.name}»? Låtene går tilbake til «Mitt bibliotek».`,'Slett liste',async()=>{const {error}=await sb.from('ml_playlists').delete().eq('id',p.id);if(error)return toast('Kunne ikke slette');S.pls=S.pls.filter(x=>x!==p);S.pl=null;render()})}
+function delPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)confirmBox(`Slette spillelista «${p.name}»? Låtene blir ikke slettet.`,'Slett liste',async()=>{const {error}=await sb.from('ml_playlists').delete().eq('id',p.id);if(error)return toast('Kunne ikke slette');S.pls=S.pls.filter(x=>x!==p);S.pl=null;render()})}
 async function delSong(id,quiet){
   const s=song(id);if(!s)return;
   const {error}=await sb.from('ml_songs').delete().eq('id',id);if(error)return toast('Kunne ikke slette låten');
@@ -706,9 +707,9 @@ $('#selbar').addEventListener('click',e=>{
   if(k==='new')return newFromSel(ids);
   if(k==='add'){
     const others=S.pls.filter(p=>p.id!==S.pl);
-    modal(`<h2>Legg ${ant(ids.length)} i …</h2>${others.length?`<div class="opts">${others.map(p=>`<button data-m="to" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>`:'<p style="color:var(--mut)">Du har ingen album eller spillelister ennå.</p>'}<button class="btn" data-m="new" style="width:100%;margin-top:8px">+ Nytt album / spilleliste</button><button class="line" data-m="close" style="margin-top:8px">Avbryt</button>`,{act:async(m,bt)=>{
+    modal(`<h2>Legg ${ant(ids.length)} i …</h2>${others.length?`<div class="pick"><select id="plpick" aria-label="Velg album">${others.sort((a,b)=>coll.compare(a.name,b.name)).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><button class="btn" data-m="to">Legg til</button></div>`:'<p style="color:var(--mut)">Du har ingen album eller spillelister ennå.</p>'}<button class="btn" data-m="new" style="width:100%;margin-top:8px">+ Nytt album / spilleliste</button><button class="line" data-m="close" style="margin-top:8px">Avbryt</button>`,{act:async(m,bt)=>{
       if(m==='new')return newFromSel(ids);
-      if(m!=='to')return;const p=S.pls.find(x=>x.id===bt.dataset.p);if(!p)return;close();
+      if(m!=='to')return;const p=S.pls.find(x=>x.id===$('#plpick').value);if(!p)return;close();
       p.song_ids=[...p.song_ids,...ids.filter(i=>!p.song_ids.includes(i))];await savePl(p);await fromSource(ids,p.id);endSel();toast(`${ant(ids.length)} lagt i «${p.name}»`);
     }});
   }
