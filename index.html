@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 15: fortsetter der du slapp -->
+<!-- versjon 12: ekte platespiller -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -98,18 +98,46 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 .mini{display:none}
 .np{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;gap:18px;padding:calc(12px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));overflow:auto;background:linear-gradient(180deg,color-mix(in srgb,hsl(var(--h,20) 70% 50%) 45%,var(--bg)),var(--bg) 68%)}
 .np .tophd{width:100%;max-width:460px;display:flex;justify-content:space-between;align-items:center;color:var(--mut);font-size:14px}
-.stage{width:100%;max-width:520px;display:grid;grid-template-columns:minmax(0,1fr) 52px;align-items:center;gap:8px}
-.deck{position:relative;width:min(64vw,44vh,420px);aspect-ratio:1;margin:auto}
-.disc{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,#0c0b0e 0 17%,transparent 17.5%),repeating-radial-gradient(circle,#141317 0 1.6px,#1d1b21 2.2px 3.4px);box-shadow:0 28px 60px rgba(0,0,0,.45),inset 0 0 0 2px #000;animation:spin 1.8s linear infinite;animation-play-state:paused}
-.playing .disc,.playing .bar .cv{animation-play-state:running}
-.disc .lab{position:absolute;inset:31%;border-radius:50%;overflow:hidden}
-.disc .lab .cv{width:100%;height:100%;border-radius:50%;font-size:clamp(28px,7vw,54px)}
-.disc .lab::after{content:"";position:absolute;left:50%;top:50%;width:9%;height:9%;margin:-4.5% 0 0 -4.5%;border-radius:50%;background:#0c0b0e;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
-.sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:conic-gradient(from 20deg,transparent 0 8%,rgba(255,255,255,.10) 12%,transparent 18% 50%,rgba(255,255,255,.08) 62%,transparent 68%)}
-.arm{position:absolute;right:-6%;top:-6%;width:46%;height:auto;transform-origin:82% 14%;transform:rotate(-24deg);transition:transform .7s ease;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4))}
-.playing .arm{transform:rotate(0deg)}
-.vvol{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mut)}
-.vvol input{writing-mode:vertical-lr;direction:rtl;width:32px;height:min(200px,30vh)}
+.stage{width:100%;display:flex;justify-content:center}
+.plinth{position:relative;width:min(94vw,62vh,600px);aspect-ratio:1.28;border-radius:14px;overflow:hidden;color:#cfcfd4;
+ background:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px),linear-gradient(160deg,#2a2a2e,#141416 55%,#0d0d0f);
+ box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px rgba(0,0,0,.6)}
+.brand{position:absolute;left:2.6%;bottom:3%;font-size:clamp(9px,1.9vw,13px);font-weight:700;letter-spacing:.18em;color:#b9b9c0;text-shadow:0 1px 0 #000}
+.brand small{display:block;font-weight:500;letter-spacing:.08em;font-size:.72em;color:#7d7d85}
+.platter{position:absolute;left:5%;top:5.5%;width:69%;aspect-ratio:1;border-radius:50%;
+ background:radial-gradient(circle,#202022 0 92%,#4a4a50 92.5%,#9a9aa2 94%,#3a3a40 96%,#18181a 97% 100%);
+ box-shadow:0 10px 24px rgba(0,0,0,.6),0 0 0 1px #000;animation:spin 1.8s linear infinite;animation-play-state:paused}
+.s45 .platter{animation-duration:1.33s}
+.playing .platter{animation-play-state:running}
+.platter::before{content:"";position:absolute;inset:0;border-radius:50%;
+ background:repeating-conic-gradient(#e8e8ec 0 .9deg,transparent .9deg 3deg);
+ -webkit-mask:radial-gradient(circle,transparent 0 94.2%,#000 94.6% 96.2%,transparent 96.6%);mask:radial-gradient(circle,transparent 0 94.2%,#000 94.6% 96.2%,transparent 96.6%);opacity:.8}
+.vinyl2{position:absolute;inset:5%;border-radius:50%;
+ background:radial-gradient(circle,transparent 0 34%,#0a0a0b 34% 36%,transparent 36% 58%,rgba(0,0,0,.9) 58% 58.6%,transparent 58.6% 74%,rgba(0,0,0,.9) 74% 74.6%,transparent 74.6% 96%,#060607 97% 100%),
+ repeating-radial-gradient(circle,#0b0b0c 0 .7px,#1c1c1f 1px 1.6px,#121214 1.9px 2.4px);
+ box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.vinyl2 .lab{position:absolute;inset:32.5%;border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px rgba(0,0,0,.6)}
+.vinyl2 .lab .cv{width:100%;height:100%;border-radius:50%;font-size:clamp(20px,5vw,44px)}
+.vinyl2 .lab::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,transparent 0 62%,rgba(0,0,0,.18) 63% 64%,transparent 65%)}
+.glare{position:absolute;left:5%;top:5.5%;width:69%;aspect-ratio:1;border-radius:50%;pointer-events:none;mix-blend-mode:screen;
+ background:conic-gradient(from 300deg,transparent 0 4%,rgba(255,255,255,.14) 9%,transparent 15% 46%,rgba(255,255,255,.10) 53%,transparent 60%);
+ -webkit-mask:radial-gradient(circle,transparent 0 17%,#000 18% 66%,transparent 67%);mask:radial-gradient(circle,transparent 0 17%,#000 18% 66%,transparent 67%)}
+.spindle{position:absolute;left:calc(5% + 34.5% - 1%);top:calc(5.5% + 34.5%*1.28 - 1.28%);width:2%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#9a9aa2 45%,#3a3a40);box-shadow:0 1px 2px #000}
+.playing .bar .cv{animation-play-state:running}
+.tarm{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.tarm .swing{transform-box:view-box;transform-origin:108px 22px;transform:rotate(-26deg);transition:transform .9s cubic-bezier(.4,.1,.3,1)}
+.playing .tarm .swing{transform:rotate(calc(var(--p,0) * 13deg))}
+.ctrls{position:absolute;right:12%;bottom:4.5%;display:flex;gap:6px;align-items:center}
+.ss{width:clamp(56px,12.5vw,76px);white-space:nowrap;height:clamp(26px,5.5vw,36px);border-radius:5px;background:linear-gradient(#3b3b40,#1c1c1f);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 2px 4px #000;color:#c9c9cf;font-size:clamp(7px,1.35vw,10px);font-weight:700;letter-spacing:.02em}
+.ss:active{transform:translateY(1px)}
+.spd{width:clamp(26px,6vw,36px);height:clamp(20px,4.2vw,26px);border-radius:4px;background:linear-gradient(#333338,#19191c);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2px 3px #000;color:#9d9da5;font-size:clamp(8px,1.5vw,10px);font-weight:700}
+.spd.on{color:#ff8a4d;text-shadow:0 0 6px #ff6a3d}
+.lamp{position:absolute;left:3.6%;top:4.5%;width:clamp(8px,1.6vw,11px);aspect-ratio:1;border-radius:50%;background:#3a2018;box-shadow:inset 0 1px 2px #000}
+.playing .lamp{background:#ff6a3d;box-shadow:0 0 10px #ff6a3d,0 0 2px #fff inset}
+.fader{position:absolute;right:3.5%;bottom:4%;height:33%;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:clamp(7px,1.4vw,9px);font-weight:700;letter-spacing:.1em;color:#8d8d95}
+.fader input{writing-mode:vertical-lr;direction:rtl;flex:1;width:clamp(18px,4vw,26px);margin:0;accent-color:#d8d8de}
+.fader .mk{position:absolute;right:-8px;top:6px;bottom:22px;width:5px;background:repeating-linear-gradient(#5a5a62 0 1px,transparent 1px 12%)}
+.rest{position:absolute;right:10%;top:61%;width:3.4%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 35%,#6a6a72,#202024);box-shadow:0 2px 3px #000}
 .np .prog,.np .btns,.np .info,.np .extra{width:100%;max-width:460px}
 .extra{display:flex;justify-content:center}
 .eqv{display:grid;grid-template-columns:auto minmax(0,1fr) 64px;gap:12px;align-items:center;margin:6px 0}
@@ -131,12 +159,6 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
 .row.on .ck{background:var(--acc);border-color:var(--acc)}
 .selbar{position:fixed;left:0;right:0;bottom:0;z-index:12;background:var(--pan);border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(0,0,0,.25);padding:12px max(3vw,12px) calc(12px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .selbar b{margin-right:auto;font-size:17px}
-
-.qi{display:flex;gap:12px;align-items:center;padding:6px 0}.qi .tt{flex:1}.qi .cv{width:44px;height:44px}
-.addrow{display:flex;gap:8px;margin-bottom:6px}
-.psel{flex:1;min-width:0;height:44px;border-radius:999px;border:1px solid var(--line);background:var(--pan2);color:var(--ink);font:inherit;font-size:16px;padding:0 14px}
-.tag.o{background:color-mix(in srgb,#2fa86b 28%,transparent)}
-.offbar{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--pan2);font-size:15px}
 .chip{min-height:40px;padding:0 16px;border-radius:999px;background:var(--pan2);font-size:14px;margin:0 0 12px}
 @media(max-width:700px){.selbar .btn{height:40px;padding:0 14px;font-size:15px}.selbar b{flex-basis:100%}}
 .np .info{width:100%;max-width:460px;display:flex;align-items:center;gap:8px}
@@ -186,7 +208,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
  .top .btn span{display:none}.top .btn{padding:0 14px}
  .search{max-width:none}
 }
-@media(prefers-reduced-motion:reduce){.vinyl,.disc,.bar .cv{animation:none}.arm{transition:none}.toast{transition:none}}
+@media(prefers-reduced-motion:reduce){.vinyl,.platter,.bar .cv{animation:none}.tarm .swing{transition:none}.arm{transition:none}.toast{transition:none}}
 </style></head><body>
 
 <div class="setup" id="setup" hidden><h1>Nesten klar!</h1><p>Appen mangler koblingen til Supabase. Åpne filen <b>config.js</b>, lim inn Project URL og anon key fra Supabase, og send endringen til GitHub (Commit og Push origin).</p></div>
@@ -203,7 +225,7 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
   <label class="search"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="q" type="search" placeholder="Søk etter låt, artist eller album" aria-label="Søk"></label>
   <input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.oga,.opus" multiple hidden>
 </header>
-<nav class="tabs"><button data-tab="pl">Album og lister</button><button data-tab="liked">Likte låter</button><button data-tab="shared">Felles</button><button data-tab="all" id="taball" hidden>Alle brukere</button></nav>
+<nav class="tabs"><button data-tab="mine">Mitt bibliotek</button><button data-tab="liked">Likte låter</button><button data-tab="pl">Album og lister</button><button data-tab="shared">Felles</button><button data-tab="all" id="taball" hidden>Alle brukere</button></nav>
 <main id="view"><p class="loading">Henter låtene dine …</p></main>
 </div>
 
@@ -214,25 +236,54 @@ input[type=range]{accent-color:var(--acc);width:100%;height:24px;margin:0}
     <div class="btns"><button class="ic side" data-pc="shuf" aria-label="Tilfeldig rekkefølge"></button><button class="ic side" data-pc="prev" aria-label="Forrige"></button><button class="play" data-pc="play" aria-label="Spill / pause"></button><button class="ic" data-pc="next" aria-label="Neste"></button><button class="ic side" data-pc="rep" aria-label="Gjenta"></button></div>
     <div class="prog"><span class="tcur">0:00</span><input class="seek" type="range" min="0" max="1000" value="0" aria-label="Spol"><span class="tdur">0:00</span></div>
   </div>
-  <div class="vol"><button class="ic eqb" data-pc="queue" aria-label="Kø">KØ</button><button class="ic eqb" data-pc="eq" aria-label="Bass og diskant">EQ</button><span class="ic vi"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Volum"></div>
+  <div class="vol"><button class="ic eqb" data-pc="eq" aria-label="Bass og diskant">EQ</button><span class="ic vi"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Volum"></div>
 </footer>
 
 <section class="np" id="np" hidden>
   <div class="tophd"><button class="ic" data-pc="close" aria-label="Lukk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button><span>Spilles nå</span><span style="width:44px"></span></div>
   <div class="stage">
-    <div class="deck"><div class="disc"><div class="lab" id="npart"></div></div><div class="sheen"></div>
-      <svg class="arm" viewBox="0 0 120 160" aria-hidden="true"><circle cx="98" cy="22" r="16" fill="#3a3540"/><circle cx="98" cy="22" r="7" fill="#9a929f"/><path d="M98 22 L84 112 L58 138" stroke="#c9c2cc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="42" y="130" width="24" height="16" rx="3" transform="rotate(38 54 138)" fill="#ff6a3d"/></svg></div>
-    <div class="vvol"><span class="vi" style="width:22px"></span><input class="volr" type="range" min="0" max="100" value="90" aria-label="Lydnivå"><small>Lyd</small></div>
+    <div class="plinth" id="plinth">
+      <span class="lamp"></span>
+      <div class="platter"><div class="vinyl2"><div class="lab" id="npart"></div></div></div>
+      <div class="glare"></div><span class="spindle"></span>
+      <span class="rest"></span>
+      <svg class="tarm" viewBox="0 0 128 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="met" x1="0" x2="1"><stop offset="0" stop-color="#6c6c74"/><stop offset=".45" stop-color="#f2f2f5"/><stop offset=".55" stop-color="#c9c9cf"/><stop offset="1" stop-color="#55555c"/></linearGradient>
+          <radialGradient id="base" cx=".38" cy=".35" r=".7"><stop offset="0" stop-color="#5c5c63"/><stop offset=".6" stop-color="#2a2a2f"/><stop offset="1" stop-color="#121214"/></radialGradient>
+          <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="1.2" dy="1.6" stdDeviation="1" flood-color="#000" flood-opacity=".7"/></filter>
+        </defs>
+        <circle cx="108" cy="22" r="11" fill="url(#base)" stroke="#000" stroke-width=".4"/>
+        <circle cx="108" cy="22" r="7.4" fill="none" stroke="#4a4a52" stroke-width=".5"/>
+        <path d="M100.5 30 l3 -3" stroke="#77777f" stroke-width="1.2"/>
+        <g class="swing" filter="url(#sh)">
+          <rect x="104.6" y="3" width="6.8" height="9" rx="1.6" fill="url(#met)" stroke="#2a2a2f" stroke-width=".3"/>
+          <rect x="105.6" y="5.5" width="4.8" height="1" fill="#3a3a40" opacity=".7"/>
+          <path d="M108 11 L108 22" stroke="#bdbdc4" stroke-width="1.6"/>
+          <circle cx="108" cy="22" r="3.2" fill="url(#met)" stroke="#2a2a2f" stroke-width=".3"/>
+          <path d="M108 22 C 110.5 38, 106 52, 95 60.5 L 86.5 66.2" fill="none" stroke="#1a1a1d" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M108 22 C 110.5 38, 106 52, 95 60.5 L 86.5 66.2" fill="none" stroke="url(#met)" stroke-width="1.5" stroke-linecap="round"/>
+          <g transform="translate(84.5 67.5) rotate(-34)">
+            <rect x="-6.2" y="-2.6" width="9.4" height="5.2" rx=".8" fill="#1e1e22" stroke="#55555c" stroke-width=".35"/>
+            <rect x="-4.6" y="-1.6" width="4.6" height="3.2" rx=".4" fill="#c8c8ce"/>
+            <path d="M2.6 -2.6 l2.8 -.9" stroke="#8a8a92" stroke-width=".7" stroke-linecap="round"/>
+          </g>
+        </g>
+      </svg>
+      <div class="ctrls"><button class="ss" data-pc="play" aria-label="Start / stopp">START·STOP</button><button class="spd on" data-spd="33">33</button><button class="spd" data-spd="45">45</button></div>
+      <div class="brand">SONGIFY<small>DIRECT DRIVE TURNTABLE</small></div>
+      <div class="fader"><input class="volr" type="range" min="0" max="100" value="90" aria-label="Lydnivå"><span>VOLUM</span><span class="mk"></span></div>
+    </div>
   </div>
   <div class="info"><div class="tt"><b id="ntitle"></b><small id="nart"></small></div><button class="ic heart" data-pc="like" aria-label="Lik låten"></button></div>
   <div class="prog"><span class="tcur">0:00</span><input class="seek" type="range" min="0" max="1000" value="0" aria-label="Spol"><span class="trem">-0:00</span></div>
   <div class="btns"><button class="ic" data-pc="shuf" aria-label="Tilfeldig rekkefølge"></button><button class="ic" data-pc="prev" aria-label="Forrige"></button><button class="play" data-pc="play" aria-label="Spill / pause"></button><button class="ic" data-pc="next" aria-label="Neste"></button><button class="ic" data-pc="rep" aria-label="Gjenta"></button></div>
-  <div class="extra" style="gap:10px;flex-wrap:wrap"><button class="btn ghost" data-pc="queue">Kø <span class="qcount"></span></button><button class="btn ghost" data-pc="eq"><span class="eqb">EQ</span> Bass og diskant</button></div>
+  <div class="extra"><button class="btn ghost" data-pc="eq"><span class="eqb">EQ</span> Bass og diskant</button></div>
 </section>
 
 <div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="drop" id="drop" hidden>Slipp låtene her</div>
-<div class="selbar" id="selbar" hidden><b id="selc">0 valgt</b><button class="btn ghost" data-sel="all">Velg alle</button><button class="btn ghost" data-sel="cancel">Avbryt</button><button class="btn ghost" data-sel="rm" id="selrm">Fjern fra lista</button><button class="btn ghost danger" data-sel="del">Slett</button><button class="btn ghost" data-sel="share" id="selshare" hidden>Del med alle</button><button class="btn ghost" data-sel="unshare" id="selunshare" hidden>Slutt å dele</button><button class="btn ghost" data-sel="add">Legg i album / spilleliste</button><button class="btn" data-sel="new">+ Nytt album / spilleliste</button></div>
+<div class="selbar" id="selbar" hidden><b id="selc">0 valgt</b><button class="btn ghost" data-sel="all">Velg alle</button><button class="btn ghost" data-sel="cancel">Avbryt</button><button class="btn ghost" data-sel="rm" id="selrm">Fjern fra lista</button><button class="btn ghost danger" data-sel="del">Slett</button><button class="btn ghost" data-sel="add">Legg i album / spilleliste</button><button class="btn" data-sel="new">+ Nytt album / spilleliste</button></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -258,7 +309,7 @@ const I={
  people:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.8"/><path d="M16 14.2a5.5 5.5 0 0 1 5.5 5.8"/></svg>',
  vol:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'
 };
-$$('[data-pc=play]').forEach(b=>b.innerHTML=`<span class="i-play">${I.play}</span><span class="i-pause">${I.pause}</span>`);
+$$('.play[data-pc=play]').forEach(b=>b.innerHTML=`<span class="i-play">${I.play}</span><span class="i-pause">${I.pause}</span>`);
 $$('[data-pc=next]').forEach(b=>b.innerHTML=I.next);$$('[data-pc=prev]').forEach(b=>b.innerHTML=I.prev);
 $$('[data-pc=shuf]').forEach(b=>b.innerHTML=I.shuf);$$('[data-pc=rep]').forEach(b=>b.innerHTML=I.rep+'<span class="badge" hidden>1</span>');
 $$('.vi').forEach(b=>b.innerHTML=I.vol);
@@ -274,12 +325,10 @@ if(!window.supabase||!cfg.url||!cfg.key||cfg.url.includes('DIN-')||cfg.key.inclu
 const sb=window.supabase.createClient(cfg.url,cfg.key);
 const B='mine-later';
 let me=null,admin=false,recovering=false,loadedAt=0;
-const S={songs:[],hidden:new Set(),likes:new Set(),pls:[],people:{},off:new Set(),offline:false,userQ:[],fromSearch:false,tab:'pl',pl:null,q:'',sel:null,showAll:false,sort:'auto',queue:[],base:[],qi:-1,shuffle:false,repeat:0,loading:true};
+const S={songs:[],hidden:new Set(),likes:new Set(),pls:[],people:{},tab:'mine',pl:null,q:'',sel:null,showAll:false,sort:'auto',queue:[],base:[],qi:-1,shuffle:false,repeat:0,loading:true};
 const song=id=>S.songs.find(s=>s.id===id);
 const curId=()=>S.queue[S.qi];
 const mine=s=>s.owner===me.id;
-const ownPl=p=>!!p&&p.owner===me.id;
-const curPl=()=>S.pls.find(p=>p.id===S.pl);
 
 /* signerte lenker til filene (gyldige i 12 timer) */
 const signed=new Map();
@@ -297,128 +346,49 @@ const cov=(s,cls='cv')=>{const u=s&&s.cover_path&&fresh(s.cover_path);return u?`
 /* ---------- automatisk innlogging (uten e-post og passord) ---------- */
 async function start(){
   try{
-    let session=null;try{({data:{session}}=await sb.auth.getSession())}catch{}
-    if(!session){
-      const k=readCache();
-      if(!navigator.onLine&&k&&k.uid)return enter({id:k.uid});
-      const r=await sb.auth.signInAnonymously();if(r.error)throw r.error;session=r.data.session;
-    }
+    let {data:{session}}=await sb.auth.getSession();
+    if(!session){const r=await sb.auth.signInAnonymously();if(r.error)throw r.error;session=r.data.session}
     await enter(session.user);
   }catch(e){
     console.error(e);
-    const k=readCache();if(k&&k.uid&&!me)return enter({id:k.uid});
     $('#asub').innerHTML='Fikk ikke startet appen. Sjekk at <b>Allow anonymous sign-ins</b> er slått på i Supabase (Authentication → Sign In / Providers).';
   }
 }
 async function enter(user){
   me=user;$('#auth').hidden=true;$('#app').hidden=false;
   S.loading=true;render();
-  let p=null;try{await sb.from('ml_profiles').upsert({id:user.id});({data:p}=await sb.from('ml_profiles').select('name').eq('id',user.id).maybeSingle())}catch{}
-  myName=(p&&p.name)||(readCache()||{}).name||'';accBtn();
-  await offInit();
+  await sb.from('ml_profiles').upsert({id:user.id});
+  const {data:p}=await sb.from('ml_profiles').select('name').eq('id',user.id).maybeSingle();
+  myName=(p&&p.name)||'';accBtn();
   await checkAdmin();
   await load();
 }
 let myName='';
 const accBtn=()=>{$('#acc').textContent=(myName||'?').charAt(0).toUpperCase()};
-async function checkAdmin(){let r={};try{r=await sb.rpc('ml_is_admin')}catch(e){r={error:e}}admin=r.error?!!(readCache()||{}).admin:!!r.data;$('#taball').hidden=!admin;if(!admin&&S.tab==='all')S.tab='pl'}
+async function checkAdmin(){const {data}=await sb.rpc('ml_is_admin');admin=!!data;$('#taball').hidden=!admin;if(!admin&&S.tab==='all')S.tab='mine'}
 async function load(){
-  let a,b,c,d;
-  try{[a,b,c,d]=await Promise.all([
+  const [a,b,c,d]=await Promise.all([
     sb.from('ml_songs').select('*').order('created_at',{ascending:false}).range(0,4999),
     sb.from('ml_hidden').select('song_id'),
     sb.from('ml_likes').select('song_id'),
     sb.from('ml_playlists').select('*').order('created_at')
-  ])}catch(e){a={error:e}}
-  if(a.error){
-    const k=readCache();
-    if(k&&k.uid===me.id){useCache(k);S.offline=true;S.loading=false;await offCovers();render();now();toast('Ingen nett – viser det som er lagret offline');restoreResume();return}
-    S.loading=false;$('#view').innerHTML=`<p class="none">Fikk ikke hentet låtene: ${esc(a.error.message||a.error)}</p>`;return;
-  }
-  S.offline=false;
-  S.songs=a.data||[];S.hidden=new Set((b.data||[]).map(x=>x.song_id));S.likes=new Set((c.data||[]).map(x=>x.song_id));S.pls=(d.data||[]).filter(p=>p.owner===me.id||p.shared);
+  ]);
+  if(a.error){S.loading=false;$('#view').innerHTML=`<p class="none">Fikk ikke hentet låtene: ${esc(a.error.message)}</p>`;return}
+  S.songs=a.data||[];S.hidden=new Set((b.data||[]).map(x=>x.song_id));S.likes=new Set((c.data||[]).map(x=>x.song_id));S.pls=d.data||[];
   if(admin){const {data:p}=await sb.from('ml_profiles').select('id,name');S.people={};(p||[]).forEach(x=>S.people[x.id]=x.name||('Bruker '+x.id.slice(0,4)))}
-  try{await signMany(S.songs.flatMap(s=>[s.file_path,s.cover_path]))}catch{}
-  saveCache();await offCovers();
-  loadedAt=Date.now();S.loading=false;render();now();restoreResume();setTimeout(fixDurations,1500);
+  await signMany(S.songs.flatMap(s=>[s.file_path,s.cover_path]));
+  loadedAt=Date.now();S.loading=false;render();now();setTimeout(fixDurations,1500);
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&me&&Date.now()-loadedAt>120000)load()});
-
-/* ---------- offline og nedlasting ---------- */
-const OC='songify-offline';
-const offKey=id=>'/offline/'+id, offCov=id=>'/offline/cover/'+id;
-function saveCache(){try{localStorage.setItem('ml-cache',JSON.stringify({uid:me.id,admin,name:myName,songs:S.songs,hidden:[...S.hidden],likes:[...S.likes],pls:S.pls}))}catch{}}
-function readCache(){try{return JSON.parse(localStorage.getItem('ml-cache')||'null')}catch{return null}}
-function useCache(k){S.songs=k.songs||[];S.hidden=new Set(k.hidden||[]);S.likes=new Set(k.likes||[]);S.pls=(k.pls||[]).filter(p=>p.owner===me.id||p.shared)}
-async function offInit(){
-  if(!('caches' in window))return;
-  try{const c=await caches.open(OC);for(const r of await c.keys()){const p=new URL(r.url).pathname;if(p.startsWith('/offline/')&&!p.startsWith('/offline/cover/'))S.off.add(p.slice(9))}}catch{}
-}
-async function offCovers(){
-  if(!('caches' in window))return;
-  try{const c=await caches.open(OC);
-    for(const s of S.songs){if(!s.cover_path||!S.off.has(s.id))continue;const x=signed.get(s.cover_path);if(x&&x.exp===Infinity)continue;const r=await c.match(offCov(s.id));if(r)signed.set(s.cover_path,{u:URL.createObjectURL(await r.blob()),exp:Infinity})}
-  }catch{}
-}
-async function songBlob(s){
-  if('caches' in window){try{const r=await (await caches.open(OC)).match(offKey(s.id));if(r)return await r.blob()}catch{}}
-  const u=await signOne(s.file_path);const res=await fetch(u);if(!res.ok)throw new Error('HTTP '+res.status);return await res.blob();
-}
-async function saveOffline(s){
-  const c=await caches.open(OC);
-  const b=await songBlob(s);
-  await c.put(offKey(s.id),new Response(b,{headers:{'Content-Type':b.type||'audio/mpeg'}}));
-  if(s.cover_path){try{const u=await signOne(s.cover_path);const r=await fetch(u);if(r.ok)await c.put(offCov(s.id),new Response(await r.blob()))}catch{}}
-  S.off.add(s.id);
-}
-async function dropOffline(ids){try{const c=await caches.open(OC);for(const id of ids){await c.delete(offKey(id));await c.delete(offCov(id));S.off.delete(id)}}catch{}}
-const plSongs=p=>p.song_ids.map(song).filter(Boolean);
-const offAll=p=>{const L=plSongs(p);return L.length>0&&L.every(s=>S.off.has(s.id))};
-function offLabel(p){const L=plSongs(p),k=L.filter(s=>S.off.has(s.id)).length;return !L.length?'Last ned offline':k===L.length?'✓ Offline – fjern':k?`Last ned resten offline (${k}/${L.length})`:'Last ned offline'}
-async function offlinePl(){
-  const p=curPl();if(!p)return;
-  if(!('caches' in window))return toast('Denne nettleseren kan ikke lagre offline');
-  const L=plSongs(p);if(!L.length)return toast('Albumet er tomt');
-  if(offAll(p))return confirmBox(`Fjerne «${p.name}» fra offline? Låtene kan fortsatt spilles når du har nett.`,'Fjern offline',async()=>{await dropOffline(L.map(s=>s.id));render();toast('Fjernet fra offline')});
-  if(S.offline)return toast('Du må ha nett for å laste ned');
-  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch{}
-  const todo=L.filter(s=>!S.off.has(s.id));let n=0,fail=0;
-  for(const s of todo){toast(`Laster ned offline ${++n} av ${todo.length} …`,true);try{await saveOffline(s)}catch(e){console.error(e);fail++}}
-  await offCovers();render();
-  toast(fail?`${todo.length-fail} lagret offline, ${fail} feilet`:`«${p.name}» kan nå spilles uten nett`);
-}
-async function downloadSong(s){
-  toast('Henter låten …',true);
-  try{
-    const b=await songBlob(s);const ext=(s.file_path.split('.').pop()||'mp3').toLowerCase();
-    const name=((s.artist?s.artist+' - ':'')+s.title).replace(/[\\/:*?"<>|]/g,'').trim()+'.'+ext;
-    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();
-    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},5000);
-    toast('Lastet ned: '+name);
-  }catch(e){console.error(e);toast('Kunne ikke laste ned låten')}
-}
-function plPicker(){
-  const own=S.pls.filter(ownPl);
-  return own.length?`<div class="addrow"><select id="plsel" class="psel" aria-label="Velg album">${own.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><button class="btn" data-m="addsel">Legg til</button></div>`:'';
-}
-window.addEventListener('online',()=>{if(me&&S.offline)load()});
 
 /* ---------- konto ---------- */
 let shareNew=true;try{shareNew=localStorage.getItem('ml-share')!=='0'}catch{}
 $('#acc').onclick=()=>{
   modal(`<h2>Deg</h2>
   <form id="nameform"><label class="field"><span>Navnet ditt (valgfritt)</span><input name="name" value="${esc(myName)}" maxlength="40" placeholder="F.eks. Andreas"></label><button class="btn ghost">Lagre navn</button></form>
-  ${admin?`<p class="lbl">Du er admin på denne enheten.</p><label class="check"><input type="checkbox" id="shr" ${shareNew?'checked':''}><span><b>Del nye låter og album jeg lager med alle</b><br><small style="color:var(--mut)">Da havner de i biblioteket til alle som har appen.</small></span></label>${(()=>{const n=S.songs.filter(s=>mine(s)&&!s.shared).length,a=S.pls.filter(p=>ownPl(p)&&!p.shared).length;return n||a?`<button class="btn" data-m="shareall" style="width:100%;margin-top:4px">Del alle mine låter og album med alle</button><p style="color:var(--mut);font-size:14px;margin:6px 0 0">${ant(n)} og ${a} ${a===1?'album':'album'} er ikke delt ennå.</p>`:'<p style="color:var(--mut);font-size:14px">Alle låtene og albumene dine er delt med alle.</p>'})()}`
-  :`<form id="adminform"><p class="lbl">Er du admin? Skriv inn admin-koden.</p><label class="field"><span>Admin-kode</span><input name="code" type="password" autocomplete="off"></label><button class="btn ghost">Bli admin</button></form>`}
-  <p style="color:var(--mut);font-size:14px;margin:16px 0 0">Låtene du laster opp er bare dine, og hører til denne enheten og nettleseren. Felles låter får du uansett.${admin?' Vil du at andre (eller dine andre enheter) skal få låtene dine, må de deles med alle.':''}</p>
-  <button class="line" data-m="close" style="margin-top:8px">Lukk</button>`,{act:async m=>{
-    if(m!=='shareall')return;
-    const ids=S.songs.filter(s=>mine(s)&&!s.shared).map(s=>s.id),pls=S.pls.filter(p=>ownPl(p)&&!p.shared);
-    close();toast('Deler …',true);
-    if(ids.length){const {error}=await sb.from('ml_songs').update({shared:true}).in('id',ids);if(error)return toast('Kunne ikke dele låtene: '+error.message);ids.forEach(i=>{const s=song(i);if(s)s.shared=true})}
-    if(pls.length){const {error}=await sb.from('ml_playlists').update({shared:true}).in('id',pls.map(p=>p.id));if(error){render();return toast(/shared/i.test(error.message)?'Låtene er delt. For album: kjør den nye SQL-en i Supabase først':'Kunne ikke dele albumene: '+error.message)}pls.forEach(p=>p.shared=true)}
-    render();toast(`${ant(ids.length)} og ${pls.length} album er nå delt med alle`);
-  },submit:async f=>{
+  ${admin?`<p class="lbl">Du er admin på denne enheten. Alt du laster opp deles automatisk med alle.</p>`:`<form id="adminform"><p class="lbl">Er du admin? Skriv inn admin-koden.</p><label class="field"><span>Admin-kode</span><input name="code" type="password" autocomplete="off"></label><button class="btn ghost">Bli admin</button></form>`}
+  <p style="color:var(--mut);font-size:14px;margin:16px 0 0">Låtene du laster opp er bare dine, og hører til denne enheten og nettleseren. Felles låter får du uansett.</p>
+  <button class="line" data-m="close" style="margin-top:8px">Lukk</button>`,{submit:async f=>{
     if(f.has('code')){const {data,error}=await sb.rpc('ml_claim_admin',{p_code:f.get('code')});if(error||!data)return toast('Feil kode');close();await checkAdmin();await load();toast('Du er nå admin');}
     else{const name=(f.get('name')||'').trim();const {error}=await sb.from('ml_profiles').update({name}).eq('id',me.id);if(error)return toast('Kunne ikke lagre');myName=name;accBtn();close();toast('Navnet er lagret')}
   }});
@@ -521,7 +491,7 @@ function addFiles(list,target=null){
 async function runUploads(){
   upRun=true;const st={n:0,big:0,fail:0};let share=false;const added=[];
   while(UQ.length){
-    let {f,pl:tgt,conv}=UQ.shift();upDone++;share=admin&&shareNew;
+    let {f,pl:tgt,conv}=UQ.shift();upDone++;share=admin;
     if(conv){toast(`Gjør om ${upDone} av ${upTotal} til MP3 …${!st.cv?' (første gang tar det litt tid)':''}`,true);try{f=await toMp3(f);st.cv=(st.cv||0)+1}catch(e){console.error(e);st.cf=(st.cf||0)+1;continue}}
     if(f.size>50*1048576){st.big++;continue}
     toast(`Laster opp ${upDone} av ${upTotal} …`,true);
@@ -548,7 +518,7 @@ async function runUploads(){
   toast(parts.join(' · ')||'Ingen låter lagt til');
 }
 let upTarget=null;
-const curTarget=()=>S.tab==='pl'&&S.pl&&ownPl(curPl())?S.pl:null;
+const curTarget=()=>S.tab==='pl'&&S.pl?S.pl:null;
 $('#up').onclick=()=>{upTarget=curTarget();$('#file').click()};
 $('#file').onchange=e=>{addFiles(e.target.files,upTarget);e.target.value=''};
 let dc=0;
@@ -584,41 +554,40 @@ function render(){
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===S.tab));
   const v=$('#view');
   if(S.loading){v.innerHTML='<p class="loading">Henter låtene dine …</p>';return}
-  if((S.tab==='mine'||(S.tab==='pl'&&!S.pl&&!S.pls.length))&&!library().length&&!S.q){
+  if(S.tab==='mine'&&!library().length&&!S.q){
     v.innerHTML=`<section class="empty">${VINYL}<div><h1>Ditt eget musikkbibliotek</h1><p>Last opp MP3, M4A, WAV eller FLAC fra telefonen eller PC-en. Navn, artist og cover hentes automatisk fra filene når det finnes. Låtene ligger trygt i skyen. Felles låter fra admin dukker opp her av seg selv.</p><p><button class="btn" data-act="upload">Last opp låter</button></p></div></section>`;return;
   }
   if(S.tab==='pl'&&!S.pl){
     v.innerHTML=`<div class="head"><div><h1>Album og spillelister</h1><p>${S.pls.length} ${S.pls.length===1?'liste':'lister'}</p></div><button class="btn" data-act="newpl">+ Nytt album / spilleliste</button></div>
-    ${S.offline?'<p class="offbar">Du er uten nett. Bare album og låter du har lastet ned kan spilles.</p>':''}
     ${S.pls.length?"":"<p class=\"none\">Du har ingen album eller spillelister ennå. Trykk «+ Nytt album / spilleliste» for å lage den første.</p>"}<div class="grid">
-    ${(()=>{const P=inPl(),n=library().filter(s=>!P.has(s.id)).length;return n?`<button class="card" data-act="loose"><div class="cv gen" style="--h:18">♪</div><b>Uten album</b><small>${n} ${n===1?'låt':'låter'}</small></button>`:''})()}
-    ${S.pls.map(p=>{const f=song(p.song_ids[0]);return `<button class="card" data-act="openpl" data-p="${esc(p.id)}">${f?cov(f):`<div class="cv gen" style="--h:${hue(p.name)}">${esc(p.name.charAt(0).toUpperCase())}</div>`}<b>${esc(p.name)}</b><small>${p.song_ids.filter(song).length} låter${p.shared?' · Felles':''}${offAll(p)?' · Offline':''}</small></button>`}).join('')}</div>`;
+    ${S.pls.map(p=>{const f=song(p.song_ids[0]);return `<button class="card" data-act="openpl" data-p="${esc(p.id)}">${f?cov(f):`<div class="cv gen" style="--h:${hue(p.name)}">${esc(p.name.charAt(0).toUpperCase())}</div>`}<b>${esc(p.name)}</b><small>${p.song_ids.filter(song).length} låter</small></button>`}).join('')}</div>`;
     return;
   }
   const pl=S.tab==='pl'?S.pls.find(p=>p.id===S.pl):null;
   if(S.tab==='pl'&&!pl){S.pl=null;return render()}
   const L=visible(),tot=L.reduce((a,s)=>a+(s.duration||0),0);
-  const meta={mine:S.q.trim()?['Søk','Søkeresultater',18]:['Biblioteket ditt','Uten album',18],liked:['Biblioteket ditt','Likte låter',345],shared:['Delt med alle','Felles låter',200],all:['Kun for admin','Alle brukeres låter',265]}[S.tab]||[pl.shared?'Felles album':'Spilleliste',pl.name,hue(pl.name)];
+  const meta={mine:['Biblioteket ditt','Mitt bibliotek',18],liked:['Biblioteket ditt','Likte låter',345],shared:['Delt med alle','Felles låter',200],all:['Kun for admin','Alle brukeres låter',265]}[S.tab]||['Spilleliste',pl.name,hue(pl.name)];
   const first=pl&&song(pl.song_ids[0]);
   const art=first?cov(first,'cv art'):`<div class="cv art gen" style="--h:${meta[2]}">${S.tab==='liked'?I.heartF:S.tab==='shared'||S.tab==='all'?I.people:pl?esc(pl.name.charAt(0).toUpperCase()):'♪'}</div>`;
   const mb=(library().filter(mine).reduce((a,s)=>a+(s.size||0),0)/1048576).toFixed(0);
-  v.innerHTML=`${pl||S.tab==='mine'?'<button class="back" data-act="back">← Alle album og lister</button>':''}${S.offline?'<p class="offbar">Du er uten nett. Bare låter du har lastet ned kan spilles.</p>':''}
+  v.innerHTML=`${pl?'<button class="back" data-act="back">← Alle spillelister</button>':''}
   <section class="hero" style="--h:${meta[2]}">${art}<div><p class="kind">${meta[0]}</p><h1>${esc(meta[1])}</h1><p>${L.length} ${L.length===1?'låt':'låter'} · ${long(tot)}${S.q?` · søk: «${esc(S.q)}»`:''}</p>
-  <div class="hb"><button class="btn" data-act="playall">${I.play} Spill</button><button class="btn ghost" data-act="shuffleall">${I.shuf} Tilfeldig</button>${L.length?'<button class="btn ghost" data-act="select">Velg låter</button>':''}${pl?`<button class="btn ghost" data-act="offpl">${offLabel(pl)}</button>`:''}${pl?(ownPl(pl)?'<button class="btn ghost" data-act="uphere">Last opp hit</button><button class="btn ghost" data-act="renpl">Gi nytt navn</button><button class="btn ghost" data-act="delpl">Slett liste</button>':'')+(admin?`<button class="btn ghost" data-act="sharepl">${pl.shared?'Slutt å dele album':'Del album med alle'}</button>`:''):''}</div></div></section>
+  <div class="hb"><button class="btn" data-act="playall">${I.play} Spill</button><button class="btn ghost" data-act="shuffleall">${I.shuf} Tilfeldig</button>${L.length?'<button class="btn ghost" data-act="select">Velg låter</button>':''}${pl?'<button class="btn ghost" data-act="uphere">Last opp hit</button><button class="btn ghost" data-act="renpl">Gi nytt navn</button><button class="btn ghost" data-act="delpl">Slett liste</button>':''}</div></div></section>
   ${(()=>{const n=S.songs.filter(s=>mine(s)&&CONV.test(s.file_path)).length;return n?`<div class="msg" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 12px"><span style="flex:1;min-width:200px">${ant(n)} er i WMA-format og kan ikke spilles. Appen kan gjøre dem om til MP3 for deg.</span><button class="btn" data-act="convall">Gjør om til MP3</button></div>`:''})()}
+  ${(()=>{if(S.tab!=='mine'||S.q.trim())return '';const P=inPl(),n=library().filter(s=>P.has(s.id)).length;return n?`<button class="chip" data-act="showall">${n} ${n===1?'låt ligger':'låter ligger'} i spillelister · ${S.showAll?'Skjul dem her':'Vis dem her også'}</button>`:''})()}
   ${L.length>1?`<div class="tools"><label class="sort">Sorter <select id="sortsel">${SORTS.map(([v,l])=>`<option value="${v}"${S.sort===v?' selected':''}>${v==='auto'&&pl?'Rekkefølgen i lista':l}</option>`).join('')}</select></label></div>`:''}
   ${L.length?`<ol class="rows">${L.map((s,i)=>{
     const hid=s.shared&&!mine(s)&&S.hidden.has(s.id);
-    const tags=(S.off.has(s.id)?'<span class="tag o">Offline</span>':'')+(s.shared?'<span class="tag f">Felles</span>':'')+(hid?'<span class="tag">Ikke i biblioteket ditt</span>':'')+(S.tab==='all'?`<span class="tag">${esc(mine(s)?'Deg':(S.people[s.owner]||'Bruker '+s.owner.slice(0,4)))}</span>`:'');
+    const tags=(s.shared?'<span class="tag f">Felles</span>':'')+(hid?'<span class="tag">Ikke i biblioteket ditt</span>':'')+(S.tab==='all'?`<span class="tag">${esc(mine(s)?'Deg':(S.people[s.owner]||'Bruker '+s.owner.slice(0,4)))}</span>`:'');
     const liked=S.likes.has(s.id);
     const on=S.sel&&S.sel.has(s.id);
-    return `<li class="row${s.id===curId()?' cur':''}${hid||(S.offline&&!S.off.has(s.id))?' dim':''}${on?' on':''}" data-id="${esc(s.id)}" data-i="${i}"><span class="n">${i+1}</span>${S.sel?`<span class="cw">${cov(s)}<span class="ck">${on?CHECK:''}</span></span>`:cov(s)}<div class="tt"><b>${esc(s.title)}</b><small>${tags}${esc(s.artist||'Ukjent artist')}</small></div><span class="al">${esc(s.album)}</span><button class="ic heart${liked?' on':''}" data-act="like" aria-label="Lik">${liked?I.heartF:I.heart}</button><span class="du">${fmt(s.duration)}</span><button class="ic" data-act="more" aria-label="Flere valg">${I.more}</button></li>`}).join('')}</ol>`
-  :`<p class="none">${S.q?'Ingen låter passer søket ditt.':pl?'Her er det tomt ennå. Trykk «Last opp hit» for å laste opp sanger rett hit, eller kryss av sanger i biblioteket og velg «Legg i album / spilleliste».':S.tab==='liked'?'Du har ikke likt noen låter ennå. Trykk på hjertet ved en låt.':S.tab==='shared'?'Ingen felles låter ennå.':S.tab==='mine'?'Alle låtene dine ligger i album eller spillelister.':'Ingen låter her ennå.'}</p>`}
+    return `<li class="row${s.id===curId()?' cur':''}${hid?' dim':''}${on?' on':''}" data-id="${esc(s.id)}" data-i="${i}"><span class="n">${i+1}</span>${S.sel?`<span class="cw">${cov(s)}<span class="ck">${on?CHECK:''}</span></span>`:cov(s)}<div class="tt"><b>${esc(s.title)}</b><small>${tags}${esc(s.artist||'Ukjent artist')}</small></div><span class="al">${esc(s.album)}</span><button class="ic heart${liked?' on':''}" data-act="like" aria-label="Lik">${liked?I.heartF:I.heart}</button><span class="du">${fmt(s.duration)}</span><button class="ic" data-act="more" aria-label="Flere valg">${I.more}</button></li>`}).join('')}</ol>`
+  :`<p class="none">${S.q?'Ingen låter passer søket ditt.':pl?'Her er det tomt ennå. Trykk «Last opp hit» for å laste opp sanger rett hit, eller kryss av sanger i biblioteket og velg «Legg i album / spilleliste».':S.tab==='liked'?'Du har ikke likt noen låter ennå. Trykk på hjertet ved en låt.':S.tab==='shared'?'Ingen felles låter ennå.':S.tab==='mine'?'Alle låtene dine ligger nå i spillelister.':'Ingen låter her ennå.'}</p>`}
   <p class="meter">${library().length} låter i biblioteket ditt · ${mb} MB lastet opp av deg</p>`;
 }
-const setTab=t=>{S.tab=t;S.pl=null;S.sel=null;S.fromSearch=false;selbar();render();scrollTo(0,0)};
+const setTab=t=>{S.tab=t;S.pl=null;S.sel=null;selbar();render();scrollTo(0,0)};
 $$('.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-$('#q').addEventListener('input',e=>{S.q=e.target.value;if(S.q.trim()&&S.tab==='pl'&&!S.pl){S.tab='mine';S.fromSearch=true}else if(!S.q.trim()&&S.fromSearch){S.tab='pl';S.fromSearch=false}render()});
+$('#q').addEventListener('input',e=>{S.q=e.target.value;if(S.tab==='pl'&&!S.pl)S.tab='mine';render()});
 $('#view').addEventListener('click',e=>{
   const a=e.target.closest('[data-act]'),row=e.target.closest('.row');
   if(S.sel&&row){const id=row.dataset.id;S.sel.has(id)?S.sel.delete(id):S.sel.add(id);render();selbar();return}
@@ -634,11 +603,8 @@ $('#view').addEventListener('click',e=>{
     if(act==='newpl')return newPl();
     if(act==='openpl'){S.sel=null;selbar();S.pl=a.dataset.p;render();scrollTo(0,0);return}
     if(act==='liked')return setTab('liked');
-    if(act==='back'){S.sel=null;selbar();S.pl=null;if(S.tab==='mine'){S.tab='pl';S.q='';S.fromSearch=false;$('#q').value=''}render();scrollTo(0,0);return}
-    if(act==='loose'){S.sel=null;selbar();S.tab='mine';render();scrollTo(0,0);return}
-    if(act==='offpl')return offlinePl();
+    if(act==='back'){S.sel=null;selbar();S.pl=null;render();return}
     if(act==='renpl')return renPl();
-    if(act==='sharepl')return sharePl();
     if(act==='delpl')return delPl();
     return;
   }
@@ -660,6 +626,8 @@ async function fixDurations(){
   fixing=false;
 }
 
+document.addEventListener('click',e=>{const b=e.target.closest('[data-spd]');if(!b)return;$$('[data-spd]').forEach(x=>x.classList.toggle('on',x===b));$('#plinth').classList.toggle('s45',b.dataset.spd==='45')});
+
 /* ---------- handlinger ---------- */
 async function like(id){
   const on=!S.likes.has(id);on?S.likes.add(id):S.likes.delete(id);render();now();
@@ -674,13 +642,10 @@ async function hide(id,on){
 async function savePl(p){const {error}=await sb.from('ml_playlists').update({name:p.name,song_ids:p.song_ids}).eq('id',p.id);if(error)toast('Kunne ikke lagre spillelista')}
 function more(id){
   const s=song(id);if(!s)return;
-  const own=mine(s),hid=s.shared&&!own&&S.hidden.has(id),inPl=S.tab==='pl'&&S.pl&&ownPl(curPl());
+  const own=mine(s),hid=s.shared&&!own&&S.hidden.has(id),inPl=S.tab==='pl'&&S.pl;
   modal(`<div class="mh">${cov(s)}<div class="tt"><b>${esc(s.title)}</b><small>${esc(s.artist||'Ukjent artist')}</small></div></div>
-  <p class="lbl">Legg i album / spilleliste</p>${plPicker()}<button class="line" data-m="newadd">+ Nytt album / spilleliste</button>
-  <button class="line" data-m="queue">Legg i kø${S.userQ.length?` (${S.userQ.length} i kø nå)`:''}</button>
-  <button class="line" data-m="next">Spill som neste</button>
-  <button class="line" data-m="dl">Last ned låten til enheten</button>
-  <button class="line" data-m="off">${S.off.has(id)?'Fjern fra offline':'Lagre offline (spill uten nett)'}</button>
+  <p class="lbl">Legg i album / spilleliste</p><div class="opts">${S.pls.map(p=>`<button data-m="add" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('')}<button data-m="newadd">+ Nytt album / spilleliste</button></div>
+  ${curId()?'<button class="line" data-m="next">Spill som neste</button>':''}
   ${inPl?'<button class="line" data-m="rm">Fjern fra denne spillelisten</button>':''}
   ${own||admin?'<button class="line" data-m="edit">Endre navn, artist og album</button>':''}
   ${admin?`<button class="line" data-m="share">${s.shared?'Slutt å dele med alle':'Del med alle (gjør til felles låt)'}</button>`:''}
@@ -688,12 +653,9 @@ function more(id){
   ${s.shared&&!own&&!hid?'<button class="line danger" data-m="hide">Fjern fra biblioteket mitt</button>':''}
   ${own||admin?`<button class="line danger" data-m="del">${own?'Slett låten':'Slett låten for godt (admin)'}</button>`:''}
   <button class="line" data-m="close">Lukk</button>`,{act:async(m,b)=>{
-    if(m==='dl'){close();return downloadSong(s)}
-    if(m==='off'){close();if(S.off.has(id)){await dropOffline([id]);render();return toast('Fjernet fra offline')}toast('Lagrer offline …',true);try{await saveOffline(s);render();toast('Lagret offline')}catch(e){console.error(e);toast('Kunne ikke lagre offline')}return}
-    if(m==='addsel'){const p=S.pls.find(p=>p.id===$('#plsel').value);if(!p)return;close();if(p.song_ids.includes(id))return toast('Låten er allerede i «'+p.name+'»');const fromLib=S.tab==='mine';p.song_ids=[...p.song_ids,id];render();await savePl(p);toast((fromLib?'Flyttet til «':'Lagt til i «')+p.name+'»')}
+    if(m==='add'){const p=S.pls.find(p=>p.id===b.dataset.p);if(!p)return;close();if(p.song_ids.includes(id))return toast('Låten er allerede i «'+p.name+'»');const fromLib=S.tab==='mine';p.song_ids=[...p.song_ids,id];render();await savePl(p);toast((fromLib?'Flyttet til «':'Lagt til i «')+p.name+'»')}
     else if(m==='newadd')newPl(id);
-    else if(m==='next'){close();enqueue(id,true)}
-    else if(m==='queue'){close();enqueue(id,false)}
+    else if(m==='next'){const i=S.queue.indexOf(id);if(i>-1&&i!==S.qi){S.queue.splice(i,1);if(i<S.qi)S.qi--}if(id!==curId())S.queue.splice(S.qi+1,0,id);toast('Spilles som neste');close()}
     else if(m==='rm'){const p=S.pls.find(p=>p.id===S.pl);p.song_ids=p.song_ids.filter(x=>x!==id);close();render();savePl(p)}
     else if(m==='edit')edit(id);
     else if(m==='share'){close();const {error}=await sb.from('ml_songs').update({shared:!s.shared}).eq('id',id);if(error)return toast('Kunne ikke endre');s.shared=!s.shared;render();toast(s.shared?'Låten er nå delt med alle':'Låten er ikke delt lenger')}
@@ -708,15 +670,7 @@ function edit(id){const s=song(id);
 }
 function ask(title,val,cb){modal(`<form><h2>${esc(title)}</h2><label class="field"><span>Navn</span><input name="v" value="${esc(val)}" maxlength="80" required></label><div class="acts"><button type="button" class="btn ghost" data-m="close">Avbryt</button><button class="btn">Lagre</button></div></form>`,{submit:f=>{const v=f.get('v').trim();if(v){close();cb(v)}}})}
 function confirmBox(text,yes,cb){modal(`<h2>Er du sikker?</h2><p>${esc(text)}</p><div class="acts"><button class="btn ghost" data-m="close">Avbryt</button><button class="btn" data-m="yes">${esc(yes)}</button></div>`,{act:m=>{if(m==='yes'){close();cb()}}})}
-function newPl(addId){ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:addId?[addId]:[],...(admin&&shareNew?{shared:true}:{})}).select().single();if(error)return toast('Kunne ikke lage lista');S.pls.push(data);if(!addId){S.sel=null;selbar();S.tab='pl';S.pl=data.id;scrollTo(0,0)}render();toast(addId?'Lagt i «'+name+'»':'«'+name+'» er laget – trykk «Last opp hit» for å legge inn sanger')})}
-async function sharePl(){
-  const p=curPl();if(!p)return;const on=!p.shared;
-  const {error}=await sb.from('ml_playlists').update({shared:on}).eq('id',p.id);
-  if(error)return toast(/shared/i.test(error.message)?'Kjør den nye SQL-en i Supabase først (se LES-MEG)':'Kunne ikke endre: '+error.message);
-  p.shared=on;
-  if(on){const ids=p.song_ids.filter(i=>{const x=song(i);return x&&!x.shared});if(ids.length){const r=await sb.from('ml_songs').update({shared:true}).in('id',ids);if(!r.error)ids.forEach(i=>song(i).shared=true)}}
-  render();toast(on?`«${p.name}» og låtene i det er delt med alle`:`«${p.name}» er ikke delt lenger`);
-}
+function newPl(addId){ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:addId?[addId]:[]}).select().single();if(error)return toast('Kunne ikke lage lista');S.pls.push(data);if(!addId){S.sel=null;selbar();S.tab='pl';S.pl=data.id;scrollTo(0,0)}render();toast(addId?'Lagt i «'+name+'»':'«'+name+'» er laget – trykk «Last opp hit» for å legge inn sanger')})}
 function renPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)ask('Gi nytt navn',p.name,name=>{p.name=name;render();savePl(p)})}
 function delPl(){const p=S.pls.find(p=>p.id===S.pl);if(p)confirmBox(`Slette spillelista «${p.name}»? Låtene går tilbake til «Mitt bibliotek».`,'Slett liste',async()=>{const {error}=await sb.from('ml_playlists').delete().eq('id',p.id);if(error)return toast('Kunne ikke slette');S.pls=S.pls.filter(x=>x!==p);S.pl=null;render()})}
 async function delSong(id,quiet){
@@ -724,7 +678,7 @@ async function delSong(id,quiet){
   const {error}=await sb.from('ml_songs').delete().eq('id',id);if(error)return toast('Kunne ikke slette låten');
   sb.storage.from(B).remove([s.file_path,s.cover_path].filter(Boolean));
   const wasCur=id===curId();
-  S.songs=S.songs.filter(x=>x.id!==id);S.likes.delete(id);S.userQ=S.userQ.filter(x=>x!==id);
+  S.songs=S.songs.filter(x=>x.id!==id);S.likes.delete(id);
   for(const p of S.pls)if(p.song_ids.includes(id)){p.song_ids=p.song_ids.filter(x=>x!==id);savePl(p)}
   const i=S.queue.indexOf(id);if(i>-1){S.queue.splice(i,1);S.base=S.base.filter(x=>x!==id);if(i<S.qi)S.qi--}
   if(wasCur){audio.pause();audio.removeAttribute('src');if(S.qi>=S.queue.length)S.qi=S.queue.length-1;if(S.queue.length)load1(false);else{S.qi=-1;now()}}
@@ -737,32 +691,24 @@ const ant=n=>`${n} ${n===1?'låt':'låter'}`;
 function selbar(){
   $('#selbar').hidden=!S.sel;if(!S.sel)return;
   $('#selc').textContent=`${S.sel.size} valgt`;
-  $('#selrm').hidden=!(S.tab==='pl'&&S.pl&&ownPl(curPl()));
-  $('#selshare').hidden=!admin;$('#selunshare').hidden=!admin;
+  $('#selrm').hidden=!(S.tab==='pl'&&S.pl);
 }
 function endSel(r=true){S.sel=null;selbar();if(r)render()}
 async function fromSource(ids,target){
-  if(S.tab==='pl'&&S.pl&&S.pl!==target){const p=S.pls.find(x=>x.id===S.pl);if(p&&ownPl(p)){p.song_ids=p.song_ids.filter(i=>!ids.includes(i));await savePl(p)}}
+  if(S.tab==='pl'&&S.pl&&S.pl!==target){const p=S.pls.find(x=>x.id===S.pl);if(p){p.song_ids=p.song_ids.filter(i=>!ids.includes(i));await savePl(p)}}
 }
-$('#selbar').addEventListener('click',async e=>{
+$('#selbar').addEventListener('click',e=>{
   const b=e.target.closest('[data-sel]');if(!b)return;const k=b.dataset.sel;
   if(k==='cancel')return endSel();
   if(k==='all'){const all=visible().map(s=>s.id),every=all.length&&all.every(i=>S.sel.has(i));S.sel=every?new Set():new Set(all);render();selbar();return}
   const ids=visible().filter(s=>S.sel.has(s.id)).map(s=>s.id);
   if(!ids.length)return toast('Velg minst én låt først');
   if(k==='new')return newFromSel(ids);
-  if(k==='share'||k==='unshare'){
-    const on=k==='share';toast(on?'Deler …':'Slutter å dele …',true);
-    const {error}=await sb.from('ml_songs').update({shared:on}).in('id',ids);
-    if(error)return toast('Kunne ikke endre: '+error.message);
-    ids.forEach(i=>{const s=song(i);if(s)s.shared=on});
-    endSel();toast(on?`${ant(ids.length)} er nå delt med alle`:`${ant(ids.length)} er ikke delt lenger`);return;
-  }
   if(k==='add'){
-    const others=S.pls.filter(p=>p.id!==S.pl&&ownPl(p));
-    modal(`<h2>Legg ${ant(ids.length)} i …</h2>${others.length?`<div class="addrow"><select id="plsel" class="psel" aria-label="Velg album">${others.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><button class="btn" data-m="to">Legg til</button></div>`:'<p style="color:var(--mut)">Du har ingen album eller spillelister ennå.</p>'}<button class="btn" data-m="new" style="width:100%;margin-top:8px">+ Nytt album / spilleliste</button><button class="line" data-m="close" style="margin-top:8px">Avbryt</button>`,{act:async(m,bt)=>{
+    const others=S.pls.filter(p=>p.id!==S.pl);
+    modal(`<h2>Legg ${ant(ids.length)} i …</h2>${others.length?`<div class="opts">${others.map(p=>`<button data-m="to" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>`:'<p style="color:var(--mut)">Du har ingen album eller spillelister ennå.</p>'}<button class="btn" data-m="new" style="width:100%;margin-top:8px">+ Nytt album / spilleliste</button><button class="line" data-m="close" style="margin-top:8px">Avbryt</button>`,{act:async(m,bt)=>{
       if(m==='new')return newFromSel(ids);
-      if(m!=='to')return;const p=S.pls.find(x=>x.id===$('#plsel').value);if(!p)return;close();
+      if(m!=='to')return;const p=S.pls.find(x=>x.id===bt.dataset.p);if(!p)return;close();
       p.song_ids=[...p.song_ids,...ids.filter(i=>!p.song_ids.includes(i))];await savePl(p);await fromSource(ids,p.id);endSel();toast(`${ant(ids.length)} lagt i «${p.name}»`);
     }});
   }
@@ -781,7 +727,7 @@ $('#selbar').addEventListener('click',async e=>{
 
 function newFromSel(ids){
   ask('Nytt album / spilleliste','Album '+(S.pls.length+1),async name=>{
-    const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:ids,...(admin&&shareNew?{shared:true}:{})}).select().single();
+    const {data,error}=await sb.from('ml_playlists').insert({name,song_ids:ids}).select().single();
     if(error)return toast('Kunne ikke lage lista');
     S.pls.push(data);await fromSource(ids,data.id);endSel(false);
     S.tab='pl';S.pl=data.id;render();scrollTo(0,0);toast(`«${name}» er laget med ${ant(ids.length)}`);
@@ -800,63 +746,15 @@ const audio=new Audio();audio.preload='auto';audio.crossOrigin='anonymous';
 audio.addEventListener('loadedmetadata',()=>{const s=song(curId());if(s&&!s.duration&&isFinite(audio.duration)&&audio.duration>0){s.duration=audio.duration;render();if(mine(s)||admin)sb.from('ml_songs').update({duration:s.duration}).eq('id',s.id).then(()=>{})}});
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function startQueue(ids,i){S.base=[...ids];const first=ids[i];S.queue=S.shuffle?[first,...shuffle(ids.filter((_,k)=>k!==i))]:[...ids];S.qi=S.shuffle?0:i;load1(true);$('#np').hidden=false}
-let objU=null,pendingSeek=0,restored=false;
-function saveResume(){
-  if(!me||!curId())return;
-  try{localStorage.setItem('ml-resume',JSON.stringify({uid:me.id,q:S.queue,i:S.qi,b:S.base,u:S.userQ,t:audio.currentTime||pendingSeek||0,sh:S.shuffle,r:S.repeat}))}catch{}
-}
-function restoreResume(){
-  if(restored||curId())return;restored=true;
-  let k=null;try{k=JSON.parse(localStorage.getItem('ml-resume')||'null')}catch{}
-  if(!k||k.uid!==me.id)return;
-  const q=(k.q||[]).filter(song);if(!q.length)return;
-  let i=q.indexOf((k.q||[])[k.i]);if(i<0)i=0;
-  S.queue=q;S.qi=i;S.base=(k.b||q).filter(song);S.userQ=(k.u||[]).filter(song);
-  S.shuffle=!!k.sh;S.repeat=k.r||0;modes();qBadge();
-  pendingSeek=k.t>3?k.t:0;
-  load1(false);
-  if(pendingSeek)toast(`Trykk play for å fortsette der du slapp (${fmt(pendingSeek)})`);
-}
-const applySeek=()=>{if(pendingSeek&&isFinite(audio.duration)&&audio.duration>0){audio.currentTime=Math.min(pendingSeek,Math.max(0,audio.duration-2));pendingSeek=0}};
-audio.addEventListener('loadedmetadata',applySeek);
-audio.addEventListener('play',applySeek);
-let resT=0;
-audio.addEventListener('timeupdate',()=>{if(Date.now()-resT>3000){resT=Date.now();saveResume()}});
-audio.addEventListener('pause',saveResume);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveResume()});
-addEventListener('pagehide',saveResume);
 function load1(go){
   const s=song(curId());if(!s)return;now();render();
-  const id=s.id;
-  const play=u=>{if(curId()!==id)return;audio.src=u;if(go)audio.play().catch(()=>toast('Trykk på play for å starte'))};
-  const online=()=>{const u=fresh(s.file_path);if(u)return play(u);signOne(s.file_path).then(play).catch(()=>toast(navigator.onLine?'Kunne ikke hente låten':'Du er uten nett – denne låten er ikke lagret offline'))};
-  if(S.off.has(id)&&'caches' in window){
-    caches.open(OC).then(c=>c.match(offKey(id))).then(r=>r?r.blob():null).then(b=>{if(!b)return online();if(objU)URL.revokeObjectURL(objU);objU=URL.createObjectURL(b);play(objU)}).catch(online);
-    return;
-  }
-  online();
+  const u=fresh(s.file_path);
+  if(u){audio.src=u;if(go)audio.play().catch(()=>{});return}
+  signOne(s.file_path).then(u=>{if(curId()!==s.id)return;audio.src=u;if(go)audio.play().catch(()=>toast('Trykk på play for å starte'))}).catch(()=>toast('Kunne ikke hente låten'));
 }
 function toggle(){if(!curId()){const L=visible();if(L.length)startQueue(L.map(s=>s.id),0);return}if(audio.paused)audio.play().catch(()=>{});else audio.pause()}
-function next(auto){if(S.userQ.length){const id=S.userQ.shift();qBadge();S.queue.splice(S.qi+1,0,id);S.qi++;load1(true);return}if(!S.queue.length)return;if(S.qi<S.queue.length-1)S.qi++;else if(S.repeat===1||!auto)S.qi=0;else{audio.pause();audio.currentTime=0;return}load1(true)}
+function next(auto){if(!S.queue.length)return;if(S.qi<S.queue.length-1)S.qi++;else if(S.repeat===1||!auto)S.qi=0;else{audio.pause();audio.currentTime=0;return}load1(true)}
 function prev(){if(!S.queue.length)return;if(audio.currentTime>3){audio.currentTime=0;return}S.qi=S.qi>0?S.qi-1:(S.repeat===1?S.queue.length-1:0);load1(true)}
-function qBadge(){$$('.qcount').forEach(e=>e.textContent=S.userQ.length?`(${S.userQ.length})`:'')}
-function enqueue(id,first){
-  if(!curId()){startQueue([id],0);return}
-  if(id===curId()&&first)return toast('Låten spilles allerede');
-  S.userQ=S.userQ.filter(x=>x!==id);
-  first?S.userQ.unshift(id):S.userQ.push(id);
-  qBadge();toast(first?'Spilles som neste':`Lagt i kø · ${S.userQ.length} i kø`);
-}
-function queueSheet(){
-  const cur=song(curId()),up=S.userQ.map(song),rest=S.queue.slice(S.qi+1,S.qi+16).map(song).filter(Boolean);
-  const item=(x,i,rm)=>x?`<div class="qi">${cov(x)}<div class="tt"><b>${esc(x.title)}</b><small>${esc(x.artist||'Ukjent artist')}</small></div>${rm?`<button class="ic" data-m="qrm" data-i="${i}" aria-label="Fjern fra køen">✕</button>`:''}</div>`:'';
-  modal(`<h2>Kø</h2>${cur?`<p class="lbl">Spilles nå</p>${item(cur)}`:''}
-  <p class="lbl">Din kø (${S.userQ.length})</p>
-  ${S.userQ.length?up.map((x,i)=>item(x,i,true)).join('')+'<button class="line danger" data-m="qclear">Tøm køen</button>':'<p style="color:var(--mut);font-size:14px;margin:0">Tom. Trykk «…» ved en låt og velg «Legg i kø».</p>'}
-  ${rest.length?`<p class="lbl">Deretter fra lista</p>${rest.map(x=>item(x)).join('')}`:''}
-  <button class="line" data-m="close" style="margin-top:8px">Lukk</button>`,
-  {act:(m,b)=>{if(m==='qrm'){S.userQ.splice(+b.dataset.i,1);qBadge();queueSheet()}else if(m==='qclear'){S.userQ=[];qBadge();queueSheet()}}});
-}
 function modes(){$$('[data-pc=shuf]').forEach(b=>b.classList.toggle('on',S.shuffle));$$('[data-pc=rep]').forEach(b=>{b.classList.toggle('on',S.repeat>0);b.querySelector('.badge').hidden=S.repeat!==2;b.setAttribute('aria-label',['Gjenta: av','Gjenta: alle','Gjenta: én låt'][S.repeat])})}
 function reshuffle(){const c=curId();if(!c)return;if(S.shuffle){S.queue=[c,...shuffle(S.queue.filter(x=>x!==c))];S.qi=0}else{S.queue=[...S.base];S.qi=Math.max(0,S.queue.indexOf(c))}}
 function now(){
@@ -877,21 +775,16 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-pc]');if(!
   else if(c==='rep'){S.repeat=(S.repeat+1)%3;modes();toast(['Gjenta av','Gjentar hele lista','Gjentar denne låten'][S.repeat])}
   else if(c==='like'){if(curId())like(curId())}
   else if(c==='eq')eqSheet();
-  else if(c==='queue')queueSheet();
   else if(c==='open')$('#np').hidden=false;else if(c==='close')$('#np').hidden=true;
 });
-const MS='mediaSession' in navigator?navigator.mediaSession:null;
-audio.addEventListener('play',()=>{document.body.classList.add('playing');if(MS)try{MS.playbackState='playing'}catch{}});
-audio.addEventListener('playing',()=>now());
-audio.addEventListener('pause',()=>{document.body.classList.remove('playing');if(MS)try{MS.playbackState='paused'}catch{}});
-let posT=0;
-audio.addEventListener('timeupdate',()=>{if(!MS||!MS.setPositionState||Date.now()-posT<1000)return;posT=Date.now();const d=audio.duration;if(isFinite(d)&&d>0)try{MS.setPositionState({duration:d,playbackRate:audio.playbackRate||1,position:Math.min(audio.currentTime,d)})}catch{}});
+audio.addEventListener('play',()=>document.body.classList.add('playing'));
+audio.addEventListener('pause',()=>document.body.classList.remove('playing'));
 audio.addEventListener('ended',()=>{if(S.repeat===2){audio.currentTime=0;audio.play().catch(()=>{})}else next(true)});
 audio.addEventListener('error',()=>{if(audio.getAttribute('src'))toast(CONV.test(song(curId())?.file_path||'')?'Denne låten er WMA – trykk «Gjør om til MP3» øverst i lista':'Denne låten kan ikke spilles i denne nettleseren')});
 let drag=false;
 audio.addEventListener('timeupdate',()=>{const d=audio.duration||0,t=audio.currentTime,p=d?t/d:0;
   if(!drag)$$('.seek').forEach(r=>r.value=Math.round(p*1000));
-  $$('.tcur').forEach(e=>e.textContent=fmt(t));$$('.tdur').forEach(e=>e.textContent=fmt(d));$$('.trem').forEach(e=>e.textContent='-'+fmt(Math.max(0,d-t)));$('#mini').style.width=(p*100)+'%'});
+  $$('.tcur').forEach(e=>e.textContent=fmt(t));$$('.tdur').forEach(e=>e.textContent=fmt(d));$$('.trem').forEach(e=>e.textContent='-'+fmt(Math.max(0,d-t)));$('#mini').style.width=(p*100)+'%';$('#np').style.setProperty('--p',p.toFixed(4))});
 $$('.seek').forEach(r=>{r.addEventListener('input',()=>{drag=true;$$('.tcur').forEach(e=>e.textContent=fmt(r.value/1000*(audio.duration||0)))});r.addEventListener('change',()=>{drag=false;if(audio.duration)audio.currentTime=r.value/1000*audio.duration})});
 /* ---------- lydnivå og equalizer (bass og diskant) ---------- */
 let vol=90;try{vol=+(localStorage.getItem('ml-vol')??90)}catch{}
@@ -922,13 +815,11 @@ const wake=()=>{if(G&&G.C.state!=='running')G.C.resume().catch(()=>{})};
 audio.addEventListener('play',()=>{if(eqOn())graph();wake()});
 document.addEventListener('visibilitychange',wake);
 const setVol=v=>{vol=v;$$('.volr').forEach(r=>r.value=v);applyAudio()};setVol(vol);
-const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-if(IOS){$$('.volr').forEach(r=>r.hidden=true);$$('.vvol').forEach(e=>e.hidden=true);$$('.vol .vi').forEach(e=>e.hidden=true)}  // iPhone: bruk volumknappene på telefonen
-$$('.volr').forEach(r=>r.addEventListener('input',()=>{wake();setVol(+r.value);try{localStorage.setItem('ml-vol',r.value)}catch{}}));
+$$('.volr').forEach(r=>r.addEventListener('input',()=>{if(/iPhone|iPad|iPod/.test(navigator.userAgent))graph();wake();setVol(+r.value);try{localStorage.setItem('ml-vol',r.value)}catch{}}));
 const PRE=[['Normal',0,0],['Mer bass',6,0],['Bass-boost',10,2],['Klar lyd',-2,5],['Myk',2,-5]];
 function eqSheet(){
   const row=(k,l)=>`<div class="eqv"><b>${l}</b><input type="range" min="-12" max="12" step="1" value="${EQ[k]}" data-eq="${k}" aria-label="${l}"><output id="o-${k}"></output></div>`;
-  modal(`<h2>Bass og diskant</h2>${row('bass','Bass')}${row('treble','Diskant')}<div class="pre">${PRE.map(p=>`<button data-m="pre" data-b="${p[1]}" data-t="${p[2]}">${p[0]}</button>`).join('')}</div><p style="color:var(--mut);font-size:14px;margin:10px 0 0">Endringen høres med en gang og huskes til neste gang.${IOS?' På iPhone kan bass og diskant gjøre at musikken stopper når skjermen låses. Velg «Normal» og lukk appen helt hvis det skjer.':''}</p><button class="line" data-m="close" style="margin-top:8px">Ferdig</button>`,
+  modal(`<h2>Bass og diskant</h2>${row('bass','Bass')}${row('treble','Diskant')}<div class="pre">${PRE.map(p=>`<button data-m="pre" data-b="${p[1]}" data-t="${p[2]}">${p[0]}</button>`).join('')}</div><p style="color:var(--mut);font-size:14px;margin:10px 0 0">Endringen høres med en gang og huskes til neste gang.</p><button class="line" data-m="close" style="margin-top:8px">Ferdig</button>`,
   {act:(m,b)=>{if(m==='pre')setEq(+b.dataset.b,+b.dataset.t)}});
   $$('#sheet [data-eq]').forEach(r=>r.addEventListener('input',()=>{const o={...EQ};o[r.dataset.eq]=+r.value;setEq(o.bass,o.treble)}));
   showEq();
@@ -939,14 +830,13 @@ function showEq(){
   $$('#sheet .pre button').forEach(b=>b.classList.toggle('on',+b.dataset.b===EQ.bass&&+b.dataset.t===EQ.treble));
 }
 function setEq(b,t){EQ={bass:b,treble:t};try{localStorage.setItem('ml-eq',JSON.stringify(EQ))}catch{}if(eqOn()||G){graph();wake()}applyAudio();showEq()}
-if(MS){[['play',()=>{wake();audio.play().catch(()=>{})}],['pause',()=>audio.pause()],['stop',()=>audio.pause()],['nexttrack',()=>next(false)],['previoustrack',()=>{audio.currentTime=0;prev()}],['seekto',d=>{if(d.fastSeek&&audio.fastSeek)audio.fastSeek(d.seekTime);else audio.currentTime=d.seekTime}],['seekbackward',null],['seekforward',null]].forEach(([a,f])=>{try{MS.setActionHandler(a,f)}catch{}})}
+if('mediaSession' in navigator){const ms=navigator.mediaSession;[['play',()=>audio.play()],['pause',()=>audio.pause()],['nexttrack',()=>next(false)],['previoustrack',prev],['seekto',d=>{audio.currentTime=d.seekTime}]].forEach(([a,f])=>{try{ms.setActionHandler(a,f)}catch{}})}
 addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(!$('#modal').hidden)close();else if(S.sel)endSel();else $('#np').hidden=true;return}
   if(!me||e.target.closest('input,textarea,button'))return;
   if(e.code==='Space'){e.preventDefault();toggle()}
 });
 modes();start();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 </script>
 </body></html>
