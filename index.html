@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 13: uten Mitt bibliotek, rullegardin, legg til i kø -->
+<!-- versjon 14: artistbilder -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -342,7 +342,31 @@ async function signMany(paths){
   }
 }
 async function signOne(p){const u=fresh(p);if(u)return u;const {data,error}=await sb.storage.from(B).createSignedUrl(p,43200);if(error)throw error;signed.set(p,{u:data.signedUrl,exp:Date.now()+43200e3});return data.signedUrl}
-const cov=(s,cls='cv')=>{const u=s&&s.cover_path&&fresh(s.cover_path);return u?`<img class="${cls}" src="${esc(u)}" alt="" loading="lazy">`:`<div class="${cls} gen" style="--h:${hue((s&&(s.album||s.title))||'x')}">${esc(((s&&s.title)||'?').trim().charAt(0).toUpperCase()||'?')}</div>`};
+/* ---------- artistbilder fra Deezer ---------- */
+const AK=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'');
+let ART={};
+const artImg=s=>s&&s.artist?ART[AK(s.artist)]||'':'';
+function jsonp(url){return new Promise((res,rej)=>{const cb='dz'+Math.random().toString(36).slice(2),sc=document.createElement('script');const clean=()=>{clearTimeout(t);try{delete window[cb]}catch{}sc.remove()};const t=setTimeout(()=>{clean();rej(new Error('tidsavbrudd'))},8000);window[cb]=d=>{clean();res(d)};sc.onerror=()=>{clean();rej(new Error('nett'))};sc.src=url+(url.includes('?')?'&':'?')+'output=jsonp&callback='+cb;document.head.appendChild(sc)})}
+async function loadArtists(){const {data,error}=await sb.from('ml_artists').select('key,image_url');if(error)return false;ART={};(data||[]).forEach(r=>ART[r.key]=r.image_url||'');return true}
+let artBusy=false;
+async function fetchArtists(){
+  if(artBusy)return;artBusy=true;
+  const todo=[...new Map(S.songs.filter(s=>s.artist&&!s.cover_path).map(s=>[AK(s.artist),s.artist])).entries()].filter(([k])=>k&&!(k in ART));
+  for(const [k,name] of todo){
+    try{
+      const d=await jsonp('https://api.deezer.com/search/artist?limit=8&q='+encodeURIComponent(name));
+      const hit=(d&&d.data||[]).find(a=>AK(a.name)===k);
+      let url=hit&&(hit.picture_xl||hit.picture_big)||'';
+      if(!/^https:\/\/[a-z0-9.-]+\.dzcdn\.net\//.test(url)||/\/images\/artist\/\//.test(url))url='';
+      ART[k]=url;
+      await sb.from('ml_artists').upsert({key:k,name,image_url:url||null},{onConflict:'key',ignoreDuplicates:true});
+      if(url){render();now()}
+    }catch(e){console.warn('Artistbilde',name,e)}
+    await new Promise(r=>setTimeout(r,250));
+  }
+  artBusy=false;
+}
+const cov=(s,cls='cv')=>{const u=(s&&s.cover_path&&fresh(s.cover_path))||artImg(s);return u?`<img class="${cls}" src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<div class="${cls} gen" style="--h:${hue((s&&(s.album||s.title))||'x')}">${esc(((s&&s.title)||'?').trim().charAt(0).toUpperCase()||'?')}</div>`};
 
 /* ---------- automatisk innlogging (uten e-post og passord) ---------- */
 async function start(){
@@ -378,7 +402,8 @@ async function load(){
   S.songs=a.data||[];S.hidden=new Set((b.data||[]).map(x=>x.song_id));S.likes=new Set((c.data||[]).map(x=>x.song_id));S.pls=d.data||[];
   if(admin){const {data:p}=await sb.from('ml_profiles').select('id,name');S.people={};(p||[]).forEach(x=>S.people[x.id]=x.name||('Bruker '+x.id.slice(0,4)))}
   await signMany(S.songs.flatMap(s=>[s.file_path,s.cover_path]));
-  loadedAt=Date.now();S.loading=false;render();now();setTimeout(fixDurations,1500);
+  const artOk=await loadArtists();
+  loadedAt=Date.now();S.loading=false;render();now();setTimeout(fixDurations,1500);if(artOk)setTimeout(fetchArtists,800);
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&me&&Date.now()-loadedAt>120000)load()});
 
@@ -649,6 +674,7 @@ function more(id){
   <button class="line" data-m="next">Legg til i kø</button>
   ${inPl?'<button class="line" data-m="rm">Fjern fra denne spillelisten</button>':''}
   ${own||admin?'<button class="line" data-m="edit">Endre navn, artist og album</button>':''}
+  ${admin&&!s.cover_path&&artImg(s)?'<button class="line" data-m="noart">Fjern artistbildet (feil artist)</button>':''}
   ${admin?`<button class="line" data-m="share">${s.shared?'Slutt å dele med alle':'Del med alle (gjør til felles låt)'}</button>`:''}
   ${hid?'<button class="line" data-m="unhide">Legg tilbake i biblioteket mitt</button>':''}
   ${s.shared&&!own&&!hid?'<button class="line danger" data-m="hide">Fjern fra biblioteket mitt</button>':''}
@@ -659,6 +685,7 @@ function more(id){
     else if(m==='next'){close();if(!curId()){S.base=[id];S.queue=[id];S.qi=0;load1(true);return}S.queue.push(id);S.base.push(id);toast('Lagt til i køen')}
     else if(m==='rm'){const p=S.pls.find(p=>p.id===S.pl);p.song_ids=p.song_ids.filter(x=>x!==id);close();render();savePl(p)}
     else if(m==='edit')edit(id);
+    else if(m==='noart'){close();const k=AK(s.artist);const {error}=await sb.from('ml_artists').update({image_url:null}).eq('key',k);if(error)return toast('Kunne ikke fjerne bildet');ART[k]='';render();now();toast('Artistbildet er fjernet')}
     else if(m==='share'){close();const {error}=await sb.from('ml_songs').update({shared:!s.shared}).eq('id',id);if(error)return toast('Kunne ikke endre');s.shared=!s.shared;render();toast(s.shared?'Låten er nå delt med alle':'Låten er ikke delt lenger')}
     else if(m==='hide'){close();hide(id,true)}
     else if(m==='unhide'){close();hide(id,false)}
@@ -667,7 +694,7 @@ function more(id){
 }
 function edit(id){const s=song(id);
   modal(`<form><h2>Endre låt</h2><label class="field"><span>Navn på låten</span><input name="title" value="${esc(s.title)}" maxlength="120" required></label><label class="field"><span>Artist</span><input name="artist" value="${esc(s.artist)}" maxlength="120"></label><label class="field"><span>Album</span><input name="album" value="${esc(s.album)}" maxlength="120"></label><div class="acts"><button type="button" class="btn ghost" data-m="close">Avbryt</button><button class="btn">Lagre</button></div></form>`,
-  {submit:async f=>{const ch={title:f.get('title').trim()||s.title,artist:f.get('artist').trim(),album:f.get('album').trim()};close();const {error}=await sb.from('ml_songs').update(ch).eq('id',id);if(error)return toast('Kunne ikke lagre');Object.assign(s,ch);render();now();toast('Lagret')}});
+  {submit:async f=>{const ch={title:f.get('title').trim()||s.title,artist:f.get('artist').trim(),album:f.get('album').trim()};close();const {error}=await sb.from('ml_songs').update(ch).eq('id',id);if(error)return toast('Kunne ikke lagre');Object.assign(s,ch);render();now();toast('Lagret');fetchArtists()}});
 }
 function ask(title,val,cb){modal(`<form><h2>${esc(title)}</h2><label class="field"><span>Navn</span><input name="v" value="${esc(val)}" maxlength="80" required></label><div class="acts"><button type="button" class="btn ghost" data-m="close">Avbryt</button><button class="btn">Lagre</button></div></form>`,{submit:f=>{const v=f.get('v').trim();if(v){close();cb(v)}}})}
 function confirmBox(text,yes,cb){modal(`<h2>Er du sikker?</h2><p>${esc(text)}</p><div class="acts"><button class="btn ghost" data-m="close">Avbryt</button><button class="btn" data-m="yes">${esc(yes)}</button></div>`,{act:m=>{if(m==='yes'){close();cb()}}})}
@@ -767,7 +794,7 @@ function now(){
   $$('[data-pc=like]').forEach(b=>{b.classList.toggle('on',liked);b.innerHTML=liked?I.heartF:I.heart});
   $('#np').style.setProperty('--h',hue(s.album||s.title));
   document.title=s.title+' · Songify';
-  const cu=s.cover_path&&fresh(s.cover_path);
+  const cu=(s.cover_path&&fresh(s.cover_path))||artImg(s);
   if('mediaSession' in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:s.title,artist:s.artist,album:s.album,artwork:cu?[{src:cu,sizes:'512x512'}]:[{src:'/icon-512.png',sizes:'512x512',type:'image/png'}]})}catch{}}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pc]');if(!b)return;const c=b.dataset.pc;
