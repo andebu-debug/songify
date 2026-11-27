@@ -2,7 +2,7 @@
 <html lang="no"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Songify</title>
-<!-- versjon 14: kø og knapper på låst skjerm -->
+<!-- versjon 15: fortsetter der du slapp -->
 <meta name="theme-color" content="#141017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -332,7 +332,7 @@ async function load(){
   ])}catch(e){a={error:e}}
   if(a.error){
     const k=readCache();
-    if(k&&k.uid===me.id){useCache(k);S.offline=true;S.loading=false;await offCovers();render();now();toast('Ingen nett – viser det som er lagret offline');return}
+    if(k&&k.uid===me.id){useCache(k);S.offline=true;S.loading=false;await offCovers();render();now();toast('Ingen nett – viser det som er lagret offline');restoreResume();return}
     S.loading=false;$('#view').innerHTML=`<p class="none">Fikk ikke hentet låtene: ${esc(a.error.message||a.error)}</p>`;return;
   }
   S.offline=false;
@@ -340,7 +340,7 @@ async function load(){
   if(admin){const {data:p}=await sb.from('ml_profiles').select('id,name');S.people={};(p||[]).forEach(x=>S.people[x.id]=x.name||('Bruker '+x.id.slice(0,4)))}
   try{await signMany(S.songs.flatMap(s=>[s.file_path,s.cover_path]))}catch{}
   saveCache();await offCovers();
-  loadedAt=Date.now();S.loading=false;render();now();setTimeout(fixDurations,1500);
+  loadedAt=Date.now();S.loading=false;render();now();restoreResume();setTimeout(fixDurations,1500);
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&me&&Date.now()-loadedAt>120000)load()});
 
@@ -800,7 +800,31 @@ const audio=new Audio();audio.preload='auto';audio.crossOrigin='anonymous';
 audio.addEventListener('loadedmetadata',()=>{const s=song(curId());if(s&&!s.duration&&isFinite(audio.duration)&&audio.duration>0){s.duration=audio.duration;render();if(mine(s)||admin)sb.from('ml_songs').update({duration:s.duration}).eq('id',s.id).then(()=>{})}});
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function startQueue(ids,i){S.base=[...ids];const first=ids[i];S.queue=S.shuffle?[first,...shuffle(ids.filter((_,k)=>k!==i))]:[...ids];S.qi=S.shuffle?0:i;load1(true);$('#np').hidden=false}
-let objU=null;
+let objU=null,pendingSeek=0,restored=false;
+function saveResume(){
+  if(!me||!curId())return;
+  try{localStorage.setItem('ml-resume',JSON.stringify({uid:me.id,q:S.queue,i:S.qi,b:S.base,u:S.userQ,t:audio.currentTime||pendingSeek||0,sh:S.shuffle,r:S.repeat}))}catch{}
+}
+function restoreResume(){
+  if(restored||curId())return;restored=true;
+  let k=null;try{k=JSON.parse(localStorage.getItem('ml-resume')||'null')}catch{}
+  if(!k||k.uid!==me.id)return;
+  const q=(k.q||[]).filter(song);if(!q.length)return;
+  let i=q.indexOf((k.q||[])[k.i]);if(i<0)i=0;
+  S.queue=q;S.qi=i;S.base=(k.b||q).filter(song);S.userQ=(k.u||[]).filter(song);
+  S.shuffle=!!k.sh;S.repeat=k.r||0;modes();qBadge();
+  pendingSeek=k.t>3?k.t:0;
+  load1(false);
+  if(pendingSeek)toast(`Trykk play for å fortsette der du slapp (${fmt(pendingSeek)})`);
+}
+const applySeek=()=>{if(pendingSeek&&isFinite(audio.duration)&&audio.duration>0){audio.currentTime=Math.min(pendingSeek,Math.max(0,audio.duration-2));pendingSeek=0}};
+audio.addEventListener('loadedmetadata',applySeek);
+audio.addEventListener('play',applySeek);
+let resT=0;
+audio.addEventListener('timeupdate',()=>{if(Date.now()-resT>3000){resT=Date.now();saveResume()}});
+audio.addEventListener('pause',saveResume);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveResume()});
+addEventListener('pagehide',saveResume);
 function load1(go){
   const s=song(curId());if(!s)return;now();render();
   const id=s.id;

@@ -1,6 +1,6 @@
 // Songify – gjør at appen kan åpnes uten nett.
 // Musikk du har lagret offline ligger i et eget lager ("songify-offline") og røres ikke her.
-const C = 'songify-app-v14';
+const C = 'songify-app-v15';
 const SHELL = ['/', '/config.js', '/manifest.json', '/icon-192.png', '/icon-512.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'];
 
